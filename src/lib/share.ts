@@ -4,6 +4,8 @@ import { TEN_GOD_YEAR, type NewYearChart } from "./newyear";
 import type { Element, SajuChart } from "./saju";
 import type { ReadingRow } from "./supabase";
 import type { TarotChart } from "./tarot";
+import type { ZodiacChart } from "./zodiac";
+import { POINTS, signByKey } from "./zodiac-signs";
 
 export type SharePillar = { label: string; gan: string; zhi: string; ganElement: Element; zhiElement: Element };
 
@@ -81,6 +83,21 @@ export function shareSummary(reading: ReadingRow): ShareSummary {
         body: c.cards.map((card) => `${card.position}: ${card.meaning}`).join(" / "),
         cards: c.cards.map((card) => ({ name: card.name, nameEn: card.nameEn, reversed: card.reversed, position: card.position })),
         cta: { label: "나도 타로 카드 뽑기", href: "/tarot" },
+      };
+    }
+    case "zodiac": {
+      // 별자리 풀이는 영문 전용 상품이다.
+      const c = reading.chart as unknown as ZodiacChart;
+      const sun = signByKey(c.placements[0].sign);
+      return {
+        eyebrow: `${sun.symbol} ${sun.name} · Zodiac`,
+        hanja: c.animal.ganZhi,
+        headline: c.placements
+          .filter((p) => p.point === "sun" || p.point === "moon" || p.point === "rising")
+          .map((p) => `${POINTS[p.point].name} in ${signByKey(p.sign).name}`)
+          .join(" · "),
+        body: `${sun.keywords}. Korean zodiac: ${c.animal.name}.`,
+        cta: { label: "See your zodiac chart", href: "/en/zodiac" },
       };
     }
   }

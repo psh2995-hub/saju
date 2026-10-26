@@ -5,31 +5,33 @@ export type TarotCard = {
   arcana: "major" | "minor";
   upright: string;
   reversed: string;
+  uprightEn: string;
+  reversedEn: string;
 };
 
-const MAJOR: [string, string, string, string][] = [
-  ["바보", "The Fool", "새로운 시작, 자유, 순수한 모험", "무모함, 준비 부족, 망설임"],
-  ["마법사", "The Magician", "창조력, 의지, 실행력", "재능의 낭비, 속임수, 산만함"],
-  ["여사제", "The High Priestess", "직관, 내면의 지혜, 신비", "감정의 억눌림, 비밀, 직관 무시"],
-  ["여황제", "The Empress", "풍요, 모성, 결실", "의존, 정체, 자기 돌봄 부족"],
-  ["황제", "The Emperor", "안정, 권위, 구조", "통제욕, 경직, 독단"],
-  ["교황", "The Hierophant", "전통, 가르침, 신뢰", "관습에 대한 반발, 독자 노선"],
-  ["연인", "The Lovers", "사랑, 조화, 중요한 선택", "불균형, 갈등, 잘못된 선택"],
-  ["전차", "The Chariot", "전진, 승리, 의지력", "방향 상실, 통제력 부족"],
-  ["힘", "Strength", "내면의 힘, 인내, 용기", "자신감 부족, 감정 폭발"],
-  ["은둔자", "The Hermit", "성찰, 탐구, 고독", "고립, 외로움, 회피"],
-  ["운명의 수레바퀴", "Wheel of Fortune", "전환점, 행운, 흐름", "불운, 정체, 통제할 수 없는 변화"],
-  ["정의", "Justice", "공정, 균형, 책임", "불공정, 책임 회피, 편향"],
-  ["매달린 사람", "The Hanged Man", "관점 전환, 기다림, 희생", "지연, 헛된 희생, 결단 회피"],
-  ["죽음", "Death", "끝과 새로운 시작, 변화", "변화에 대한 저항, 미련"],
-  ["절제", "Temperance", "조화, 균형, 절제", "불균형, 과잉, 조급함"],
-  ["악마", "The Devil", "집착, 유혹, 속박", "해방, 집착에서 벗어남"],
-  ["탑", "The Tower", "급변, 붕괴, 깨달음", "변화의 회피, 서서히 오는 위기"],
-  ["별", "The Star", "희망, 치유, 영감", "실망, 자신감 상실"],
-  ["달", "The Moon", "불안, 환상, 무의식", "혼란의 해소, 진실이 드러남"],
-  ["태양", "The Sun", "성공, 기쁨, 활력", "일시적 침체, 과신"],
-  ["심판", "Judgement", "부활, 각성, 결단", "자기 의심, 과거에 머무름"],
-  ["세계", "The World", "완성, 성취, 통합", "미완성, 마무리 부족"],
+const MAJOR: [string, string, string, string, string, string][] = [
+  ["바보", "The Fool", "새로운 시작, 자유, 순수한 모험", "무모함, 준비 부족, 망설임", "New beginnings, freedom, a leap of faith", "Recklessness, poor preparation, hesitation"],
+  ["마법사", "The Magician", "창조력, 의지, 실행력", "재능의 낭비, 속임수, 산만함", "Willpower, creativity, making it happen", "Wasted talent, trickery, scattered focus"],
+  ["여사제", "The High Priestess", "직관, 내면의 지혜, 신비", "감정의 억눌림, 비밀, 직관 무시", "Intuition, inner wisdom, mystery", "Suppressed feelings, secrets, ignoring your gut"],
+  ["여황제", "The Empress", "풍요, 모성, 결실", "의존, 정체, 자기 돌봄 부족", "Abundance, nurturing, harvest", "Dependence, stagnation, neglecting self-care"],
+  ["황제", "The Emperor", "안정, 권위, 구조", "통제욕, 경직, 독단", "Stability, authority, structure", "Control issues, rigidity, stubbornness"],
+  ["교황", "The Hierophant", "전통, 가르침, 신뢰", "관습에 대한 반발, 독자 노선", "Tradition, guidance, trust", "Rebellion against convention, going your own way"],
+  ["연인", "The Lovers", "사랑, 조화, 중요한 선택", "불균형, 갈등, 잘못된 선택", "Love, harmony, an important choice", "Imbalance, conflict, a wrong choice"],
+  ["전차", "The Chariot", "전진, 승리, 의지력", "방향 상실, 통제력 부족", "Momentum, victory, determination", "Losing direction, lack of control"],
+  ["힘", "Strength", "내면의 힘, 인내, 용기", "자신감 부족, 감정 폭발", "Inner strength, patience, courage", "Self-doubt, emotional outbursts"],
+  ["은둔자", "The Hermit", "성찰, 탐구, 고독", "고립, 외로움, 회피", "Reflection, searching, solitude", "Isolation, loneliness, avoidance"],
+  ["운명의 수레바퀴", "Wheel of Fortune", "전환점, 행운, 흐름", "불운, 정체, 통제할 수 없는 변화", "Turning point, luck, cycles", "Bad luck, stagnation, change you can't control"],
+  ["정의", "Justice", "공정, 균형, 책임", "불공정, 책임 회피, 편향", "Fairness, balance, accountability", "Unfairness, dodging responsibility, bias"],
+  ["매달린 사람", "The Hanged Man", "관점 전환, 기다림, 희생", "지연, 헛된 희생, 결단 회피", "New perspective, waiting, surrender", "Delays, pointless sacrifice, indecision"],
+  ["죽음", "Death", "끝과 새로운 시작, 변화", "변화에 대한 저항, 미련", "Endings that open new beginnings, transformation", "Resisting change, clinging to the past"],
+  ["절제", "Temperance", "조화, 균형, 절제", "불균형, 과잉, 조급함", "Harmony, balance, moderation", "Imbalance, excess, impatience"],
+  ["악마", "The Devil", "집착, 유혹, 속박", "해방, 집착에서 벗어남", "Attachment, temptation, bondage", "Release, breaking free"],
+  ["탑", "The Tower", "급변, 붕괴, 깨달음", "변화의 회피, 서서히 오는 위기", "Sudden upheaval, collapse, revelation", "Avoiding change, a slow-building crisis"],
+  ["별", "The Star", "희망, 치유, 영감", "실망, 자신감 상실", "Hope, healing, inspiration", "Disappointment, lost confidence"],
+  ["달", "The Moon", "불안, 환상, 무의식", "혼란의 해소, 진실이 드러남", "Anxiety, illusion, the subconscious", "Confusion clearing, truth coming out"],
+  ["태양", "The Sun", "성공, 기쁨, 활력", "일시적 침체, 과신", "Success, joy, vitality", "A temporary slump, overconfidence"],
+  ["심판", "Judgement", "부활, 각성, 결단", "자기 의심, 과거에 머무름", "Rebirth, awakening, a decisive call", "Self-doubt, dwelling on the past"],
+  ["세계", "The World", "완성, 성취, 통합", "미완성, 마무리 부족", "Completion, achievement, wholeness", "Unfinished business, lack of closure"],
 ];
 
 const SUITS = [
@@ -124,14 +126,84 @@ const MINOR_MEANINGS: Record<(typeof SUITS)[number]["key"], [string, string][]> 
   ],
 };
 
+// [upright, reversed] in English — SUITS × RANKS order
+const MINOR_MEANINGS_EN: Record<(typeof SUITS)[number]["key"], [string, string][]> = {
+  wands: [
+    ["New passion, inspiration, a spark", "Low motivation, a delayed start"],
+    ["Planning, vision, decisions", "Fear of the unknown, lack of planning"],
+    ["Expansion, waiting for opportunity, foresight", "Delays, frustrated expectations"],
+    ["Celebration, stability, harmony", "Instability, tension at home"],
+    ["Competition, clashing opinions", "Avoiding conflict, inner tension"],
+    ["Victory, recognition, confidence", "Arrogance, going unrecognized"],
+    ["Standing your ground, defending beliefs", "Feeling overwhelmed, giving up"],
+    ["Fast progress, news on the way", "Delays, mixed signals"],
+    ["Resilience, vigilance, the last hurdle", "Exhaustion, defensiveness"],
+    ["Too much responsibility, burden", "Putting the load down, delegating"],
+    ["Curiosity, exciting news", "Distraction, immaturity"],
+    ["Adventure, drive, passionate action", "Haste, recklessness"],
+    ["Confidence, charisma, independence", "Jealousy, self-centeredness"],
+    ["Vision, leadership, boldness", "Arrogance, impulsive decisions"],
+  ],
+  cups: [
+    ["New love, overflowing feelings", "Bottled-up emotions, emptiness"],
+    ["Connection, partnership, attraction", "Imbalance in a relationship, misunderstanding"],
+    ["Friendship, celebration, gatherings", "Overindulgence, feeling left out"],
+    ["Apathy, boredom, reevaluation", "New interest, saying yes to an offer"],
+    ["Loss, regret, grief", "Recovery, forgiveness, getting back up"],
+    ["Nostalgia, innocence, reunion", "Stuck in the past"],
+    ["Fantasy, too many options", "Facing reality, choices becoming clear"],
+    ["Walking away, seeking deeper meaning", "Lingering attachment, unable to leave"],
+    ["Wishes fulfilled, contentment", "Greed, results below expectations"],
+    ["Happy home, emotional fulfillment", "Family friction, clashing values"],
+    ["A heartfelt message, a confession", "Emotional immaturity"],
+    ["A romantic offer, idealism", "Moodiness, unrealistic expectations"],
+    ["Empathy, care, intuition", "Emotional overwhelm, dependence"],
+    ["Emotional balance, generosity", "Manipulation, coldness"],
+  ],
+  swords: [
+    ["Clarity, truth, a breakthrough", "Confusion, poor judgment"],
+    ["Stalemate, a hard choice", "Making the call, information overload"],
+    ["Heartbreak, separation, sorrow", "Recovery, healing old wounds"],
+    ["Rest, recovery, regrouping", "Burnout, refusing to rest"],
+    ["Conflict, defeat, a hollow victory", "Reconciliation, the end of a fight"],
+    ["Transition, moving on, the road to recovery", "Unresolved issues, feeling stuck"],
+    ["Strategy, stealth, evasion", "Getting caught, a guilty conscience"],
+    ["Restriction, a self-made prison", "Release, a new perspective"],
+    ["Anxiety, worry, sleepless nights", "Hope, letting worries go"],
+    ["Rock bottom, the peak of pain", "Recovery begins, the worst is over"],
+    ["Curiosity, gathering information, alertness", "Gossip, hasty judgment"],
+    ["Charging ahead, bluntness, quick action", "Impulsiveness, no plan"],
+    ["Independence, clear judgment, honesty", "Coldness, harsh criticism"],
+    ["Intellect, authority, fair judgment", "Abuse of power, ruthlessness"],
+  ],
+  pentacles: [
+    ["New opportunity, the start of prosperity", "A missed chance, poor planning"],
+    ["Balance, juggling priorities", "Overload, financial chaos"],
+    ["Teamwork, skill being recognized", "Poor teamwork, mediocrity"],
+    ["Security, saving, holding on", "Stinginess, possessiveness"],
+    ["Hardship, exclusion, struggle", "Recovery, a helping hand"],
+    ["Sharing, generosity, give and take", "Unequal exchange, debt"],
+    ["Patience, long-term investment, waiting", "Impatience, slow results"],
+    ["Mastery, diligent effort", "Perfectionism, repetitive boredom"],
+    ["Self-sufficiency, abundance, ease", "Overspending, dependence"],
+    ["Wealth, family, long-term security", "Financial loss, family issues"],
+    ["Learning, new opportunity, diligence", "Lack of focus, procrastination"],
+    ["Consistency, responsibility, hard work", "Stagnation, boredom"],
+    ["Practical care, abundance, down-to-earth", "Work-life imbalance"],
+    ["Success, wealth, steady leadership", "Materialism, stubbornness"],
+  ],
+};
+
 export const TAROT_CARDS: TarotCard[] = [
-  ...MAJOR.map(([name, nameEn, upright, reversed], i) => ({
+  ...MAJOR.map(([name, nameEn, upright, reversed, uprightEn, reversedEn], i) => ({
     id: `major-${i}`,
     name: `${i}. ${name}`,
     nameEn,
     arcana: "major" as const,
     upright,
     reversed,
+    uprightEn,
+    reversedEn,
   })),
   ...SUITS.flatMap((suit) =>
     RANKS.map((rank, i) => ({
@@ -141,6 +213,8 @@ export const TAROT_CARDS: TarotCard[] = [
       arcana: "minor" as const,
       upright: MINOR_MEANINGS[suit.key][i][0],
       reversed: MINOR_MEANINGS[suit.key][i][1],
+      uprightEn: MINOR_MEANINGS_EN[suit.key][i][0],
+      reversedEn: MINOR_MEANINGS_EN[suit.key][i][1],
     })),
   ),
 ];

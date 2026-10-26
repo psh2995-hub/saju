@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Lang } from "@/lib/i18n";
 import type { FollowupRow } from "@/lib/supabase";
 import { Followups } from "./Followups";
 import { Unlock, type UnlockTarget } from "./Unlock";
@@ -18,6 +19,7 @@ export function ReadingActions(props: {
   mockPayment: boolean;
   paymentRedirect: Redirect;
   description: React.ReactNode;
+  lang?: Lang;
 }) {
   const [done, setDone] = useState(props.status === "paid" && !!props.result);
   const target: UnlockTarget = { type: "reading", id: props.readingId, readingId: props.readingId };
@@ -34,6 +36,7 @@ export function ReadingActions(props: {
         paymentRedirect={redirect && !redirect.followupId ? redirect : null}
         description={props.description}
         onDone={() => setDone(true)}
+        lang={props.lang}
       />
       {done && (
         <Followups
@@ -41,6 +44,7 @@ export function ReadingActions(props: {
           initial={props.followups}
           mockPayment={props.mockPayment}
           paymentRedirect={redirect?.followupId ? { ...redirect, followupId: redirect.followupId } : null}
+          lang={props.lang}
         />
       )}
     </>

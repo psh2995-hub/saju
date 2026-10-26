@@ -79,6 +79,7 @@ export type Database = {
           id: string;
           input: Json;
           kind: string;
+          lang: string;
           paid_at: string | null;
           payment_id: string | null;
           price: number;
@@ -94,6 +95,7 @@ export type Database = {
           id?: string;
           input: Json;
           kind: string;
+          lang?: string;
           paid_at?: string | null;
           payment_id?: string | null;
           price: number;
