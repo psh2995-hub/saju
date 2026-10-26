@@ -49,28 +49,59 @@ export type SajuChart = {
   nextYear: { year: number; ganZhi: string; ko: string };
 };
 
-const GAN_KO: Record<string, string> = {
+export const GAN_KO: Record<string, string> = {
   甲: "갑", 乙: "을", 丙: "병", 丁: "정", 戊: "무", 己: "기", 庚: "경", 辛: "신", 壬: "임", 癸: "계",
 };
-const ZHI_KO: Record<string, string> = {
+export const ZHI_KO: Record<string, string> = {
   子: "자", 丑: "축", 寅: "인", 卯: "묘", 辰: "진", 巳: "사", 午: "오", 未: "미", 申: "신", 酉: "유", 戌: "술", 亥: "해",
 };
-const GAN_ELEMENT: Record<string, Element> = {
+export const GAN_ELEMENT: Record<string, Element> = {
   甲: "목", 乙: "목", 丙: "화", 丁: "화", 戊: "토", 己: "토", 庚: "금", 辛: "금", 壬: "수", 癸: "수",
 };
-const ZHI_ELEMENT: Record<string, Element> = {
+export const ZHI_ELEMENT: Record<string, Element> = {
   子: "수", 丑: "토", 寅: "목", 卯: "목", 辰: "토", 巳: "화", 午: "화", 未: "토", 申: "금", 酉: "금", 戌: "토", 亥: "수",
 };
 const YANG_GAN = new Set(["甲", "丙", "戊", "庚", "壬"]);
 // 명리학에서 子·午·巳·亥의 음양은 체용(體用) 구분이 있으나, 여기서는 일반적인 지지 순서상의 음양을 쓴다.
 const YANG_ZHI = new Set(["子", "寅", "辰", "午", "申", "戌"]);
-const ZODIAC: Record<string, string> = {
+export const ZODIAC: Record<string, string> = {
   子: "쥐", 丑: "소", 寅: "호랑이", 卯: "토끼", 辰: "용", 巳: "뱀", 午: "말", 未: "양", 申: "원숭이", 酉: "닭", 戌: "개", 亥: "돼지",
 };
 const TEN_GOD_KO: Record<string, string> = {
   比肩: "비견", 劫财: "겁재", 食神: "식신", 伤官: "상관", 偏财: "편재", 正财: "정재",
   七杀: "편관", 正官: "정관", 偏印: "편인", 正印: "정인", 日主: "일간",
 };
+
+/** 지지의 본기(지장간 중 대표 천간) */
+const ZHI_MAIN_STEM: Record<string, string> = {
+  子: "癸", 丑: "己", 寅: "甲", 卯: "乙", 辰: "戊", 巳: "丙", 午: "丁", 未: "己", 申: "庚", 酉: "辛", 戌: "戊", 亥: "壬",
+};
+
+const ELEMENT_ORDER: Element[] = ["목", "화", "토", "금", "수"];
+
+/** a가 b를 생하면 1, b가 a를 생하면 -1, a가 b를 극하면 2, b가 a를 극하면 -2, 같으면 0 */
+export function elementRelation(a: Element, b: Element): 0 | 1 | -1 | 2 | -2 {
+  const d = (ELEMENT_ORDER.indexOf(b) - ELEMENT_ORDER.indexOf(a) + 5) % 5;
+  return ({ 0: 0, 1: 1, 2: 2, 3: -2, 4: -1 } as const)[d as 0 | 1 | 2 | 3 | 4];
+}
+
+/** 일간 기준으로 다른 천간(또는 지지 본기)의 십성을 구한다. */
+export function tenGod(dayGan: string, other: string): string {
+  const gan = ZHI_MAIN_STEM[other] ?? other;
+  const samePolarity = YANG_GAN.has(dayGan) === YANG_GAN.has(gan);
+  switch (elementRelation(GAN_ELEMENT[dayGan], GAN_ELEMENT[gan])) {
+    case 0:
+      return samePolarity ? "비견" : "겁재";
+    case 1:
+      return samePolarity ? "식신" : "상관";
+    case 2:
+      return samePolarity ? "편재" : "정재";
+    case -2:
+      return samePolarity ? "편관" : "정관";
+    case -1:
+      return samePolarity ? "편인" : "정인";
+  }
+}
 
 /**
  * 한국 서머타임 시행 기간 (현지 시각 기준, [시작, 종료)).

@@ -15,8 +15,25 @@ export type ReadingRow = {
   ai_status: "none" | "generating" | "done" | "failed";
   ai_started_at: string | null;
   ai_result: string | null;
+  share_id: string;
   created_at: string;
 };
+
+export type FollowupRow = {
+  id: string;
+  reading_id: string;
+  question: string;
+  price: number;
+  status: "unpaid" | "paid" | "refunded";
+  payment_id: string | null;
+  paid_at: string | null;
+  ai_status: "none" | "generating" | "done" | "failed";
+  ai_started_at: string | null;
+  ai_result: string | null;
+  created_at: string;
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 let client: ReturnType<typeof createClient<Database>> | null = null;
 
@@ -32,8 +49,29 @@ export function db() {
 }
 
 export async function getReading(id: string): Promise<ReadingRow | null> {
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  if (!UUID.test(id)) return null;
   const { data, error } = await db().from("readings").select("*").eq("id", id).maybeSingle();
   if (error) throw error;
   return data as unknown as ReadingRow | null;
+}
+
+/** 공유 페이지용. 공유 ID로는 무료 요약만 보여 준다. */
+export async function getReadingByShareId(shareId: string): Promise<ReadingRow | null> {
+  if (!UUID.test(shareId)) return null;
+  const { data, error } = await db().from("readings").select("*").eq("share_id", shareId).maybeSingle();
+  if (error) throw error;
+  return data as unknown as ReadingRow | null;
+}
+
+export async function getFollowup(id: string): Promise<FollowupRow | null> {
+  if (!UUID.test(id)) return null;
+  const { data, error } = await db().from("followups").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data as FollowupRow | null;
+}
+
+export async function getFollowups(readingId: string): Promise<FollowupRow[]> {
+  const { data, error } = await db().from("followups").select("*").eq("reading_id", readingId).order("created_at");
+  if (error) throw error;
+  return data as FollowupRow[];
 }

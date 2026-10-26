@@ -1,8 +1,12 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { z } from "zod";
+import type { GunghapChart, GunghapInput } from "./gunghap";
+import type { NewYearChart } from "./newyear";
 import type { SajuChart, SajuInput } from "./saju";
+import type { FollowupRow, ReadingRow } from "./supabase";
 import type { TarotChart, TarotInput } from "./tarot";
-import type { ReadingRow } from "./supabase";
 
 const MODEL = "claude-opus-5-5";
 
@@ -16,30 +20,69 @@ const COMMON_RULES = `
 - 부적, 굿, 추가 유료 상담 등 다른 상품 구매를 권하지 않습니다.
 - 마지막 문단은 오늘부터 실천할 수 있는 조언 한두 가지로 맺습니다.`;
 
-function sajuPrompt(input: SajuInput, chart: SajuChart) {
+const SYSTEM_SAJU = "당신은 30년 경력의 명리학 상담가입니다. 자평명리 이론에 밝고, 어려운 용어는 일상 언어로 풀어 설명합니다.";
+const SYSTEM_TAROT =
+  "당신은 따뜻하고 통찰력 있는 타로 리더입니다. 라이더-웨이트 덱의 상징에 밝고, 카드의 이미지를 생생하게 묘사하며 해석합니다.";
+
+function describeChart(chart: SajuChart, input: SajuInput, title = "명식") {
   const pillars = chart.pillars
     .map((p) => `${p.label}: ${p.gan}${p.zhi}(${p.ganKo}${p.zhiKo}) — 천간 ${p.ganElement}/${p.ganYinYang}/${p.ganTenGod}, 지지 ${p.zhiElement}/${p.zhiYinYang}/${p.zhiTenGod}, 지장간 ${p.hiddenStems.join("")}`)
     .join("\n");
   const elements = Object.entries(chart.elementCounts).map(([k, v]) => `${k} ${v}`).join(", ");
   const daeun = chart.daeun.map((d) => `${d.startAge}세(${d.startYear}년~) ${d.ganZhi}(${d.ko})`).join(", ");
-  return `다음 명식으로 사주 정밀 풀이를 작성해 주세요.
-
-[기본 정보]
-이름: ${input.name || "(미입력)"}
-성별: ${input.gender === "M" ? "남성" : "여성"}
-양력 생일: ${chart.solarDate} / 음력: ${chart.lunarDate}
+  return `[${title}]
+이름: ${input.name || "(미입력)"} / 성별: ${input.gender === "M" ? "남성" : "여성"}
+양력 생일: ${chart.solarDate} / 음력: ${chart.lunarDate} / 띠: ${chart.zodiac}
 출생 시각: ${chart.usedTime ? `${chart.usedTime} (${chart.corrections.join(", ") || "보정 없음"})` : "모름 — 시주 없이 세 기둥으로 풀이"}
-띠: ${chart.zodiac}
-
-[명식]
 ${pillars}
 일간: ${chart.dayMaster.gan}(${chart.dayMaster.ko}) ${chart.dayMaster.element}
 오행 개수: ${elements}
+대운: ${daeun}`;
+}
 
-[대운] ${daeun}
-[세운] 올해 ${chart.thisYear.year}년 ${chart.thisYear.ganZhi}(${chart.thisYear.ko}), 내년 ${chart.nextYear.year}년 ${chart.nextYear.ganZhi}(${chart.nextYear.ko})
+function describeTarot(input: TarotInput, chart: TarotChart) {
+  const cards = chart.cards
+    .map((c, i) => `${i + 1}. [${c.position}] ${c.name} (${c.nameEn}) ${c.reversed ? "역방향" : "정방향"} — ${c.meaning}`)
+    .join("\n");
+  return `주제: ${chart.topicLabel}
+질문: ${input.question || "(구체적인 질문 없이 주제 전반에 대해)"}
+[뽑힌 카드]
+${cards}`;
+}
 
-다음 순서로 작성합니다(전체 5,000~7,000자 내외):
+function describeNewYear(input: SajuInput, chart: NewYearChart) {
+  const y = chart.year;
+  const months = chart.months.map((m) => `${m.label} ${m.ganZhi}(${m.ko}) 천간 ${m.ganTenGod}/지지 ${m.zhiTenGod}`).join("\n");
+  return `${describeChart(chart.base, input)}
+
+[${y.year}년 세운] ${y.ganZhi}(${y.ko}) — 일간 기준 천간 ${y.ganTenGod}, 지지 ${y.zhiTenGod}
+[그해의 대운] ${chart.daeun ? `${chart.daeun.startAge}세부터 ${chart.daeun.ganZhi}(${chart.daeun.ko})` : "대운 시작 전"}
+[월운 — 절기 기준, 입춘부터]
+${months}`;
+}
+
+function describeGunghap(input: GunghapInput, chart: GunghapChart) {
+  const points = chart.points.map((p) => `- ${p.title}: ${p.text}`).join("\n");
+  return `${describeChart(chart.a, input.a, `${input.a.name || "첫째 사람"}의 명식`)}
+
+${describeChart(chart.b, input.b, `${input.b.name || "둘째 사람"}의 명식`)}
+
+[미리 계산한 궁합 포인트]
+${points}`;
+}
+
+type Request = { system: string; context: string; instructions: string };
+
+function requestFor(reading: ReadingRow): Request {
+  const input = reading.input as never;
+  const chart = reading.chart as never;
+  switch (reading.kind) {
+    case "saju": {
+      const c = chart as SajuChart;
+      return {
+        system: SYSTEM_SAJU,
+        context: `${describeChart(c, input)}\n세운: 올해 ${c.thisYear.year}년 ${c.thisYear.ganZhi}(${c.thisYear.ko}), 내년 ${c.nextYear.year}년 ${c.nextYear.ganZhi}(${c.nextYear.ko})`,
+        instructions: `위 명식으로 사주 정밀 풀이를 작성해 주세요. 다음 순서로 씁니다(전체 5,000~7,000자 내외):
 ## 타고난 기질과 성격
 ## 오행의 균형과 보완법
 ## 재물운
@@ -47,52 +90,66 @@ ${pillars}
 ## 연애·결혼운
 ## 건강 관리 포인트
 ## 대운의 흐름 (현재 대운을 중심으로)
-## ${chart.thisYear.year}년과 ${chart.nextYear.year}년의 운세
-## 마무리 조언
-${COMMON_RULES}`;
-}
-
-function tarotPrompt(input: TarotInput, chart: TarotChart) {
-  const cards = chart.cards
-    .map((c, i) => `${i + 1}. [${c.position}] ${c.name} (${c.nameEn}) ${c.reversed ? "역방향" : "정방향"} — ${c.meaning}`)
-    .join("\n");
-  return `다음 타로 스프레드로 심층 해석을 작성해 주세요.
-
-주제: ${chart.topicLabel}
-질문: ${input.question || "(구체적인 질문 없이 주제 전반에 대해)"}
-
-[뽑힌 카드]
-${cards}
-
-다음 순서로 작성합니다(전체 2,500~3,500자 내외):
+## ${c.thisYear.year}년과 ${c.nextYear.year}년의 운세
+## 마무리 조언`,
+      };
+    }
+    case "tarot":
+      return {
+        system: SYSTEM_TAROT,
+        context: describeTarot(input, chart),
+        instructions: `위 타로 스프레드로 심층 해석을 작성해 주세요. 다음 순서로 씁니다(전체 2,500~3,500자 내외):
 ## 카드별 해석 (각 카드를 위치의 의미와 엮어서, 카드마다 ### 소제목)
 ## 세 장이 함께 말하는 이야기
 ## 질문에 대한 답
-## 조언
-${COMMON_RULES}`;
+## 조언`,
+      };
+    case "newyear": {
+      const c = chart as NewYearChart;
+      return {
+        system: SYSTEM_SAJU,
+        context: describeNewYear(input, c),
+        instructions: `위 명식과 ${c.year.year}년 세운·월운으로 ${c.year.year}년 신년운세를 작성해 주세요. 다음 순서로 씁니다(전체 5,000~7,000자 내외):
+## ${c.year.year}년 총운 (세운이 일간에 주는 의미, 대운과의 관계)
+## 재물운
+## 직업·학업운
+## 연애·인간관계운
+## 건강운
+## 월별 운세 (2월부터 다음 해 1월까지, 달마다 ### 소제목과 2~4문장)
+## ${c.year.year}년을 잘 보내는 법`,
+      };
+    }
+    case "gunghap": {
+      const i = input as GunghapInput;
+      return {
+        system: SYSTEM_SAJU,
+        context: describeGunghap(i, chart),
+        instructions: `위 두 사람의 명식으로 궁합 풀이를 작성해 주세요. 두 사람을 이름(없으면 "나", "상대")으로 부르고, 한쪽 편을 들지 않습니다. 다음 순서로 씁니다(전체 5,000~7,000자 내외):
+## 두 사람의 첫인상과 끌림
+## 성격과 대화 방식의 궁합
+## 연애할 때 / 함께 살 때
+## 부딪히기 쉬운 지점과 푸는 법
+## 재물·생활 궁합
+## 앞으로 몇 년의 흐름 (두 사람의 대운과 올해·내년 세운)
+## 이 관계를 위한 조언`,
+      };
+    }
+  }
 }
 
-/** 결제 완료된 풀이의 AI 해석을 스트리밍한다. 텍스트 조각을 차례로 yield한다. */
-export async function* streamReading(reading: ReadingRow): AsyncGenerator<string> {
+/** 텍스트 조각을 차례로 yield하는 스트리밍 요청 */
+async function* streamText(system: string, user: string, maxTokens: number): AsyncGenerator<string> {
   const anthropic = new Anthropic();
-  const prompt =
-    reading.kind === "saju"
-      ? sajuPrompt(reading.input as unknown as SajuInput, reading.chart as unknown as SajuChart)
-      : tarotPrompt(reading.input as unknown as TarotInput, reading.chart as unknown as TarotChart);
-
   const stream = anthropic.beta.messages.stream({
     model: MODEL,
-    max_tokens: 32000,
+    max_tokens: maxTokens,
     thinking: { type: "adaptive" },
     output_config: { effort: "medium" },
     // 안전 분류기가 요청을 거절하면 서버 측에서 권장 모델로 다시 시도한다.
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
-    system:
-      reading.kind === "saju"
-        ? "당신은 30년 경력의 명리학 상담가입니다. 자평명리 이론에 밝고, 어려운 용어는 일상 언어로 풀어 설명합니다."
-        : "당신은 따뜻하고 통찰력 있는 타로 리더입니다. 라이더-웨이트 덱의 상징에 밝고, 카드의 이미지를 생생하게 묘사하며 해석합니다.",
-    messages: [{ role: "user", content: prompt }],
+    system,
+    messages: [{ role: "user", content: user }],
   });
 
   for await (const event of stream) {
@@ -102,4 +159,70 @@ export async function* streamReading(reading: ReadingRow): AsyncGenerator<string
   }
   const final = await stream.finalMessage();
   if (final.stop_reason === "refusal") throw new Error("풀이 생성이 거절되었습니다.");
+}
+
+/** 결제 완료된 풀이의 AI 해석을 스트리밍한다. */
+export function streamReading(reading: ReadingRow) {
+  const r = requestFor(reading);
+  return streamText(r.system, `${r.context}\n\n${r.instructions}\n${COMMON_RULES}`, 32000);
+}
+
+/** 추가 질문에 대한 답을 스트리밍한다. 원래 풀이와 이전 질문·답을 함께 넘긴다. */
+export function streamFollowup(reading: ReadingRow, previous: FollowupRow[], followup: FollowupRow) {
+  const r = requestFor(reading);
+  const history = previous
+    .filter((f) => f.ai_status === "done" && f.ai_result)
+    .map((f) => `Q. ${f.question}\nA. ${f.ai_result}`)
+    .join("\n\n");
+  const user = `${r.context}
+
+[이미 전해 드린 풀이]
+${reading.ai_result ?? "(없음)"}
+${history ? `\n[이전 추가 질문과 답]\n${history}\n` : ""}
+[새 질문]
+${followup.question}
+
+위 명식(또는 카드)과 이미 전해 드린 풀이에 이어서, 새 질문에만 집중해 답해 주세요.
+- 1,000~2,000자 내외. 맨 앞에 "## " 제목 없이 바로 답으로 시작하고, 필요하면 "### 소제목"을 씁니다.
+- 앞 풀이와 모순되지 않게 하고, 같은 내용을 반복하지 않습니다.
+- 질문이 명식·카드로 답할 수 없는 내용(특정 날짜의 복권 번호, 다른 사람의 사적인 정보 등)이면 그 이유를 부드럽게 설명하고 도움이 될 만한 방향을 제시합니다.
+${COMMON_RULES}`;
+  return streamText(r.system, user, 16000);
+}
+
+const DailySchema = z.object({
+  summary: z.string().describe("오늘의 한 줄 요약. 25자 이내, 마침표 없이"),
+  body: z.string().describe("오늘의 운세 본문. 3~4문장, 존댓말"),
+  tip: z.string().describe("오늘 실천할 작은 행동 하나. 20자 이내"),
+});
+
+export type DailyText = z.infer<typeof DailySchema>;
+
+/** (날짜, 일간) 조합의 오늘의 운세. 짧은 글이라 스트리밍 없이 구조화 출력으로 받는다. */
+export async function generateDaily(params: {
+  ymd: string;
+  dayGan: string;
+  dayGanKo: string;
+  dayElement: string;
+  todayGanZhi: string;
+  ganTenGod: string;
+  zhiTenGod: string;
+}): Promise<DailyText> {
+  const anthropic = new Anthropic();
+  const response = await anthropic.messages.parse({
+    model: MODEL,
+    max_tokens: 4000,
+    output_config: { effort: "low", format: zodOutputFormat(DailySchema) },
+    system: SYSTEM_SAJU,
+    messages: [
+      {
+        role: "user",
+        content: `${params.ymd} 오늘의 일진은 ${params.todayGanZhi}입니다.
+일간이 ${params.dayGan}(${params.dayGanKo}, ${params.dayElement})인 사람에게 오늘 일진의 천간은 ${params.ganTenGod}, 지지는 ${params.zhiTenGod}에 해당합니다.
+이 관계를 근거로 오늘의 운세를 써 주세요. 일·돈·사람 중 오늘 두드러지는 한두 가지에 집중하고, 공포를 주거나 단정하는 표현은 쓰지 않습니다.`,
+      },
+    ],
+  });
+  if (!response.parsed_output) throw new Error(`오늘의 운세 생성 실패: ${response.stop_reason}`);
+  return response.parsed_output;
 }

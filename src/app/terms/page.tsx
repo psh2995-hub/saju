@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/LegalPage";
-import { formatWon, PRODUCTS } from "@/lib/products";
+import { FOLLOWUP, formatWon, PRODUCTS } from "@/lib/products";
 import { BUSINESS, PENDING, SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = { title: "이용약관" };
@@ -19,7 +19,8 @@ export default function TermsPage() {
       <ol>
         <li>&quot;이용자&quot;란 이 약관에 따라 서비스를 이용하는 자를 말합니다.</li>
         <li>&quot;무료 콘텐츠&quot;란 사주 명식, 오행 분포, 대운표, 타로 카드의 기본 의미 등 대가 없이 제공되는 콘텐츠를 말합니다.</li>
-        <li>&quot;유료 콘텐츠&quot;란 결제 후 제공되는 사주 정밀 풀이, 타로 심층 해석 등 디지털 콘텐츠를 말합니다.</li>
+        <li>&quot;유료 콘텐츠&quot;란 결제 후 제공되는 사주·궁합·신년운세 정밀 풀이, 타로 심층 해석, 추가 질문 답변 등 디지털 콘텐츠를 말합니다.</li>
+        <li>&quot;매일 운세&quot;란 이용자가 신청한 경우 매일 카카오 알림톡으로 무료 발송하는 오늘의 운세를 말합니다.</li>
       </ol>
 
       <h2>제3조 (약관의 게시와 변경)</h2>
@@ -56,8 +57,9 @@ export default function TermsPage() {
       <h2>제6조 (유료 콘텐츠의 가격과 결제)</h2>
       <ol>
         <li>
-          유료 콘텐츠의 가격은 각 결제 화면에 표시하며, 현재 가격은 {PRODUCTS.saju.name} {formatWon(PRODUCTS.saju.price)},{" "}
-          {PRODUCTS.tarot.name} {formatWon(PRODUCTS.tarot.price)}입니다.
+          유료 콘텐츠의 가격은 각 결제 화면에 표시하며, 현재 가격은{" "}
+          {[...Object.values(PRODUCTS).map((p) => `${p.name} ${formatWon(p.price)}`), `${FOLLOWUP.name} 1회 ${formatWon(FOLLOWUP.price)}`].join(", ")}
+          입니다.
         </li>
         <li>결제는 회사가 제휴한 전자결제대행사(PG)를 통해 신용카드 등으로 할 수 있습니다.</li>
       </ol>
@@ -67,6 +69,10 @@ export default function TermsPage() {
         <li>유료 콘텐츠는 결제 완료 즉시 작성이 시작되며, 통상 1~3분 안에 결과 페이지에 표시됩니다.</li>
         <li>이용자는 결과 페이지 주소(URL)를 통해 다시 열람할 수 있으며, 회사는 생성일로부터 1년간 열람을 보장합니다.</li>
         <li>결과 페이지 주소를 아는 사람은 누구나 열람할 수 있으므로 이용자는 주소 관리에 유의해야 합니다.</li>
+        <li>
+          &quot;결과 공유하기&quot;로 만든 공유 주소와 이미지에는 이름·생년월일·질문 없이 무료 요약만 담기며, 유료 풀이는 열람할 수
+          없습니다.
+        </li>
       </ol>
 
       <h2>제8조 (청약철회 및 환불)</h2>

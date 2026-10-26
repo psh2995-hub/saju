@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eyebrow, ghostButtonClass, Mark } from "@/components/ui";
+import { ILJU_SUMMARY } from "@/lib/ilju";
 import { formatWon, PRODUCTS } from "@/lib/products";
 import { SITE_NAME } from "@/lib/site";
 
@@ -10,6 +11,41 @@ const SAMPLE_PILLARS = [
   { label: "연주", gan: "壬", zhi: "午" },
 ];
 
+const PRODUCT_CARDS = [
+  {
+    href: "/saju",
+    eyebrow: "SAJU",
+    title: "사주 풀이",
+    text: "생년월일시로 사주팔자·일주·오행·대운을 무료로 확인하고, 성격·재물·직업·연애·건강과 올해·내년 운세까지 정밀 풀이를 받아보세요.",
+    free: "명식 무료 · 정밀 풀이",
+    price: PRODUCTS.saju.price,
+  },
+  {
+    href: "/gunghap",
+    eyebrow: "GUNGHAP",
+    title: "궁합",
+    text: "그 사람과 나, 진짜 맞을까? 두 사람의 일주·오행·띠로 끌림과 부딪히는 지점, 앞으로의 흐름까지 풀어 드립니다.",
+    free: "궁합 포인트 무료 · 정밀 풀이",
+    price: PRODUCTS.gunghap.price,
+  },
+  {
+    href: "/newyear",
+    eyebrow: "NEW YEAR",
+    title: "신년운세",
+    text: "다가오는 한 해가 내 명식에 주는 기운과 달마다의 흐름. 재물·직업·연애·건강을 월별로 미리 살펴보세요.",
+    free: "세운·월운 무료 · 월별 풀이",
+    price: PRODUCTS.newyear.price,
+  },
+  {
+    href: "/tarot",
+    eyebrow: "TAROT",
+    title: "타로 리딩",
+    text: "마음에 걸린 질문을 떠올리며 세 장의 카드를 고르세요. 카드의 의미는 무료, 질문에 맞춘 심층 해석은 유료입니다.",
+    free: "카드 의미 무료 · 심층 해석",
+    price: PRODUCTS.tarot.price,
+  },
+];
+
 export default function Home() {
   return (
     <div>
@@ -17,10 +53,10 @@ export default function Home() {
       <section className="mx-auto grid max-w-5xl items-center gap-12 px-5 pt-16 pb-20 md:grid-cols-[1.3fr_1fr] md:pt-24">
         <div>
           <Eyebrow>四柱 · TAROT</Eyebrow>
-          <h1 className="mt-5 text-[38px] leading-[1.2] font-normal text-ink sm:text-[48px]">
-            <span className="whitespace-nowrap">타고난 시간을 읽으면</span>
+          <h1 className="mt-5 text-[32px] leading-[1.25] font-normal text-ink sm:text-[48px]">
+            <span className="sm:whitespace-nowrap">타고난 시간을 읽으면</span>
             <br />
-            <span className="whitespace-nowrap">가야 할 길이 보입니다</span>
+            <span className="sm:whitespace-nowrap">가야 할 길이 보입니다</span>
           </h1>
           <p className="mt-6 max-w-md text-[17px] leading-8 text-muted">
             {SITE_NAME}은 정통 만세력으로 당신의 사주 명식을 세우고, 지금 걷는 길에 필요한 이야기를 정성껏 들려드립니다.
@@ -51,10 +87,8 @@ export default function Home() {
             ))}
           </div>
           <div className="mt-6 border-t border-line pt-5">
-            <p className="text-xs text-gold">일간 己(기) — 곡식을 키우는 밭</p>
-            <p className="mt-2 text-sm leading-6 text-muted">
-              현실 감각이 좋고 실속을 챙길 줄 압니다. 사람과 일을 길러내는 능력이 있으며…
-            </p>
+            <p className="text-xs text-gold">일주 己卯(기묘) — {ILJU_SUMMARY["己卯"].title}</p>
+            <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{ILJU_SUMMARY["己卯"].text}</p>
           </div>
         </div>
       </section>
@@ -62,30 +96,25 @@ export default function Home() {
       {/* 상품 */}
       <section className="mx-auto max-w-5xl px-5">
         <div className="grid gap-px bg-line md:grid-cols-2">
-          <Link href="/saju" className="group bg-canvas p-8 transition hover:bg-surface-1 sm:p-10">
-            <Eyebrow>SAJU</Eyebrow>
-            <p className="mt-4 text-[28px] text-ink">사주 풀이</p>
-            <p className="mt-3 text-[15px] leading-7 text-muted">
-              생년월일시로 사주팔자·오행·대운을 무료로 확인하고, 성격·재물·직업·연애·건강과 올해·내년 운세까지 정밀 풀이를
-              받아보세요.
-            </p>
-            <p className="mt-8 flex items-baseline justify-between border-t border-line pt-5 text-sm text-muted">
-              명식 무료 · 정밀 풀이
-              <span className="text-xl text-ink">{formatWon(PRODUCTS.saju.price)}</span>
-            </p>
-          </Link>
-          <Link href="/tarot" className="group bg-canvas p-8 transition hover:bg-surface-1 sm:p-10">
-            <Eyebrow>TAROT</Eyebrow>
-            <p className="mt-4 text-[28px] text-ink">타로 리딩</p>
-            <p className="mt-3 text-[15px] leading-7 text-muted">
-              마음에 걸린 질문을 떠올리며 세 장의 카드를 고르세요. 카드의 의미는 무료, 질문에 맞춘 심층 해석은 유료입니다.
-            </p>
-            <p className="mt-8 flex items-baseline justify-between border-t border-line pt-5 text-sm text-muted">
-              카드 의미 무료 · 심층 해석
-              <span className="text-xl text-ink">{formatWon(PRODUCTS.tarot.price)}</span>
-            </p>
-          </Link>
+          {PRODUCT_CARDS.map((p) => (
+            <Link key={p.href} href={p.href} className="group bg-canvas p-8 transition hover:bg-surface-1 sm:p-10">
+              <Eyebrow>{p.eyebrow}</Eyebrow>
+              <p className="mt-4 text-[28px] text-ink">{p.title}</p>
+              <p className="mt-3 text-[15px] leading-7 text-muted">{p.text}</p>
+              <p className="mt-8 flex items-baseline justify-between border-t border-line pt-5 text-sm text-muted">
+                {p.free}
+                <span className="text-xl text-ink">{formatWon(p.price)}</span>
+              </p>
+            </Link>
+          ))}
         </div>
+        <Link href="/today" className="mt-px flex items-center justify-between gap-4 bg-surface-1 p-6 transition hover:bg-surface-2 sm:px-10">
+          <div>
+            <Eyebrow>DAILY</Eyebrow>
+            <p className="mt-2 text-lg text-ink">오늘의 운세 · 매일 아침 카카오톡으로</p>
+          </div>
+          <span className="text-sm text-gold">무료 →</span>
+        </Link>
       </section>
 
       {/* 이용 안내 */}
