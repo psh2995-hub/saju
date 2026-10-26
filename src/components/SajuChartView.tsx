@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ILJU_SUMMARY } from "@/lib/ilju";
 import { DAY_MASTER_SUMMARY, type Element, type SajuChart, type SajuInput } from "@/lib/saju";
 import { Eyebrow, Panel } from "./ui";
 
@@ -24,7 +26,9 @@ function Char({ hanja, ko, element, yinYang }: { hanja: string; ko: string; elem
 
 export function SajuChartView({ input, chart }: { input: SajuInput; chart: SajuChart }) {
   const total = Object.values(chart.elementCounts).reduce((a, b) => a + b, 0);
-  const summary = DAY_MASTER_SUMMARY[chart.dayMaster.gan];
+  const dayPillar = chart.pillars.find((p) => p.label === "일주")!;
+  const ilju = ILJU_SUMMARY[dayPillar.gan + dayPillar.zhi];
+  const dayMaster = DAY_MASTER_SUMMARY[chart.dayMaster.gan];
   const missing = Object.entries(chart.elementCounts).filter(([, n]) => n === 0).map(([el]) => el);
   return (
     <div className="space-y-px">
@@ -50,11 +54,22 @@ export function SajuChartView({ input, chart }: { input: SajuInput; chart: SajuC
       </Panel>
 
       <Panel>
-        <Eyebrow>DAY MASTER</Eyebrow>
+        <Eyebrow>DAY PILLAR</Eyebrow>
         <h2 className="mt-3 text-xl text-ink">
-          일간 <span className="font-[family-name:var(--font-hanja)]">{chart.dayMaster.gan}</span>({chart.dayMaster.ko}) — {summary.title}
+          일주 <span className="font-[family-name:var(--font-hanja)]">{dayPillar.gan}{dayPillar.zhi}</span>({dayPillar.ganKo}{dayPillar.zhiKo}) — {ilju.title}
         </h2>
-        <p className="mt-3 text-[15px] leading-7 text-muted">{summary.text}</p>
+        <p className="mt-3 text-[15px] leading-7 text-muted">{ilju.text}</p>
+        <p className="mt-5 border-t border-line pt-4 text-sm leading-6 text-muted-soft">
+          <span className="text-body">일간 <span className="font-[family-name:var(--font-hanja)]">{chart.dayMaster.gan}</span>({chart.dayMaster.ko}) · {dayMaster.title}</span>
+          {" — "}
+          {dayMaster.text}
+        </p>
+        <Link
+          href={`/today?g=${encodeURIComponent(chart.dayMaster.gan)}`}
+          className="mt-4 inline-block text-sm text-gold underline-offset-4 hover:underline"
+        >
+          내 일간으로 오늘의 운세 보기 →
+        </Link>
       </Panel>
 
       <Panel>

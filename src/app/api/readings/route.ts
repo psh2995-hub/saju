@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { calculateGunghap, validateGunghapInput } from "@/lib/gunghap";
+import { calculateNewYear } from "@/lib/newyear";
 import { PRODUCTS } from "@/lib/products";
 import { calculateSaju, validateSajuInput } from "@/lib/saju";
 import { db } from "@/lib/supabase";
@@ -20,6 +22,14 @@ export async function POST(request: Request) {
       const sajuInput = validateSajuInput(body.input);
       input = sajuInput;
       chart = calculateSaju(sajuInput);
+    } else if (body.kind === "newyear") {
+      const sajuInput = validateSajuInput(body.input);
+      input = sajuInput;
+      chart = calculateNewYear(sajuInput);
+    } else if (body.kind === "gunghap") {
+      const pair = validateGunghapInput(body.input);
+      input = pair;
+      chart = calculateGunghap(pair);
     } else if (body.kind === "tarot") {
       const tarotInput = validateTarotInput(body.input);
       input = tarotInput;

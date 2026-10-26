@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Serif_KR } from "next/font/google";
 import Link from "next/link";
 import { Mark } from "@/components/ui";
+import { siteUrl } from "@/lib/share";
 import { BUSINESS, PENDING, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
@@ -12,7 +13,16 @@ const hanja = Noto_Serif_KR({
   preload: false,
 });
 
+const NAV = [
+  ["/saju", "사주"],
+  ["/gunghap", "궁합"],
+  ["/newyear", "신년운세"],
+  ["/tarot", "타로"],
+  ["/today", "오늘의 운세"],
+] as const;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: { default: `${SITE_NAME} — 사주·타로`, template: `%s | ${SITE_NAME}` },
   description: "타고난 시간을 읽고 가야 할 길을 비추는 사주·타로 풀이",
 };
@@ -22,14 +32,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ko" className={`${hanja.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <header className="sticky top-0 z-10 bg-canvas/85 backdrop-blur">
-          <nav className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
-            <Link href="/" className="flex items-center gap-2.5 text-[17px] font-bold text-ink">
+          <nav className="mx-auto flex max-w-5xl flex-col px-5 sm:h-16 sm:flex-row sm:items-center sm:justify-between">
+            <Link href="/" className="flex h-14 items-center gap-2.5 text-[17px] font-bold text-ink sm:h-auto">
               <Mark className="size-6 text-gold" />
               {SITE_NAME}
             </Link>
-            <div className="flex items-center gap-6 text-sm text-muted">
-              <Link href="/saju" className="hover:text-ink">사주</Link>
-              <Link href="/tarot" className="hover:text-ink">타로</Link>
+            <div className="-mx-5 flex gap-5 overflow-x-auto px-5 pb-3 text-sm whitespace-nowrap text-muted sm:mx-0 sm:px-0 sm:pb-0">
+              {NAV.map(([href, label]) => (
+                <Link key={href} href={href} className="hover:text-ink">
+                  {label}
+                </Link>
+              ))}
             </div>
           </nav>
         </header>

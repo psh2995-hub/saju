@@ -4,11 +4,13 @@ import * as PortOne from "@portone/browser-sdk/v2";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Eyebrow, PrimaryButton } from "@/components/ui";
+import { Eyebrow, PrimaryButton } from "./ui";
 import { formatWon } from "@/lib/products";
 
+export type UnlockTarget = { type: "reading" | "followup"; id: string; readingId: string };
+
 type Props = {
-  readingId: string;
+  target: UnlockTarget;
   productName: string;
   price: number;
   initialStatus: "unpaid" | "paid" | "refunded";
@@ -16,6 +18,12 @@ type Props = {
   mockPayment: boolean;
   /** 모바일 결제 후 redirectUrl로 돌아왔을 때 쿼리에 담긴 결제 결과 */
   paymentRedirect: { paymentId: string; code: string | null; message: string | null } | null;
+  /** 결제 영역 설명 문구 */
+  description?: React.ReactNode;
+  /** 추가 질문처럼 작게 보여 줄 때 */
+  compact?: boolean;
+  /** 생성이 끝났을 때(처음부터 끝나 있던 경우 제외) */
+  onDone?: () => void;
 };
 
 type Phase = "unpaid" | "paying" | "generating" | "done" | "failed" | "refunded";
@@ -23,7 +31,9 @@ type Phase = "unpaid" | "paying" | "generating" | "done" | "failed" | "refunded"
 const STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
 const CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY;
 
-export function Unlock({ readingId, productName, price, initialStatus, initialResult, mockPayment, paymentRedirect }: Props) {
+export function Unlock({ target, productName, price, initialStatus, initialResult, mockPayment, paymentRedirect, description, compact, onDone }: Props) {
+  const generateUrl = target.type === "reading" ? `/api/readings/${target.id}/generate` : `/api/followups/${target.id}/generate`;
+  const customData = target.type === "reading" ? { readingId: target.id } : { followupId: target.id };
   const [phase, setPhase] = useState<Phase>(
     initialStatus === "refunded"
       ? "refunded"
@@ -45,7 +55,7 @@ export function Unlock({ readingId, productName, price, initialStatus, initialRe
   // 상태 초기화는 호출하는 쪽(beginGeneration)이 한다. 첫 렌더에서 effect로 바로 호출할 수 있게 하기 위함이다.
   const generate = useCallback(async () => {
     for (;;) {
-      const res = await fetch(`/api/readings/${readingId}/generate`, { method: "POST" });
+      const res = await fetch(generateUrl, { method: "POST" });
       if (res.status === 409) {
         // 다른 탭이나 이전 요청이 생성 중이다. 끝나면 저장된 결과를 받는다.
         await new Promise((r) => setTimeout(r, 5000));
@@ -63,9 +73,10 @@ export function Unlock({ readingId, productName, price, initialStatus, initialRe
         setText((t) => t + decoder.decode(value, { stream: true }));
       }
       setPhase("done");
+      onDone?.();
       return;
     }
-  }, [readingId]);
+  }, [generateUrl, onDone]);
 
   const startGeneration = useCallback(() => {
     generate().catch((e) => {
@@ -121,7 +132,7 @@ export function Unlock({ readingId, productName, price, initialStatus, initialRe
       const res = await fetch("/api/payments/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ readingId }),
+        body: JSON.stringify(customData),
       });
       if (!res.ok) {
         setError("테스트 결제에 실패했습니다.");
@@ -137,7 +148,7 @@ export function Unlock({ readingId, productName, price, initialStatus, initialRe
     }
 
     setPhase("paying");
-    const paymentId = `r-${readingId.replaceAll("-", "")}-${Date.now().toString(36)}`;
+    const paymentId = `${target.type === "reading" ? "r" : "f"}-${target.id.replaceAll("-", "")}-${Date.now().toString(36)}`;
     const response = await PortOne.requestPayment({
       storeId: STORE_ID,
       channelKey: CHANNEL_KEY,
@@ -147,8 +158,8 @@ export function Unlock({ readingId, productName, price, initialStatus, initialRe
       currency: "CURRENCY_KRW",
       payMethod: "CARD",
       productType: "PRODUCT_TYPE_DIGITAL",
-      customData: { readingId },
-      redirectUrl: `${window.location.origin}/r/${readingId}`,
+      customData,
+      redirectUrl: `${window.location.origin}/r/${target.readingId}${target.type === "followup" ? `?for=${target.id}` : ""}`,
     });
     if (!response || response.code) {
       setError(response?.message ?? "결제가 취소되었습니다.");
@@ -159,25 +170,22 @@ export function Unlock({ readingId, productName, price, initialStatus, initialRe
   }
 
   if (phase === "refunded") {
-    return <p className="bg-surface-1 p-6 text-sm text-muted">환불 처리된 풀이입니다.</p>;
+    return <p className="bg-surface-1 p-6 text-sm text-muted">환불 처리되었습니다.</p>;
   }
 
   if (phase === "unpaid" || phase === "paying") {
     return (
-      <section className="border-t-2 border-gold bg-surface-2 p-6 sm:p-8">
-        <Eyebrow>FULL READING</Eyebrow>
-        <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-2xl text-ink">{productName}</h2>
-          <p className="text-2xl text-ink">{formatWon(price)}</p>
+      <section className={compact ? "bg-surface-2 p-5" : "border-t-2 border-gold bg-surface-2 p-6 sm:p-8"}>
+        {!compact && <Eyebrow>FULL READING</Eyebrow>}
+        <div className={`${compact ? "" : "mt-3 "}flex flex-wrap items-baseline justify-between gap-2`}>
+          <h2 className={compact ? "text-base text-ink" : "text-2xl text-ink"}>{productName}</h2>
+          <p className={compact ? "text-base text-ink" : "text-2xl text-ink"}>{formatWon(price)}</p>
         </div>
-        <p className="mt-3 text-[15px] leading-7 text-muted">
-          위 결과를 바탕으로 AI 상담가가 당신만을 위한 긴 풀이를 작성해 드립니다. 결제 후 바로 작성이 시작되며, 이 페이지
-          주소로 언제든 다시 볼 수 있습니다.
-        </p>
-        <label className="mt-6 flex items-start gap-2 border-t border-line pt-5 text-xs leading-5 text-muted">
+        {description && <div className="mt-3 text-[15px] leading-7 text-muted">{description}</div>}
+        <label className={`${compact ? "mt-4" : "mt-6"} flex items-start gap-2 border-t border-line pt-5 text-xs leading-5 text-muted`}>
           <input type="checkbox" className="mt-0.5 accent-gold" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
           <span>
-            디지털 콘텐츠 특성상 결제 후 풀이 작성이 시작되면 청약철회(환불)가 제한됨을 확인했습니다. (
+            디지털 콘텐츠 특성상 결제 후 작성이 시작되면 청약철회(환불)가 제한됨을 확인했습니다. (
             <Link href="/refund" className="text-body underline hover:text-gold" target="_blank">
               환불정책
             </Link>
@@ -185,8 +193,8 @@ export function Unlock({ readingId, productName, price, initialStatus, initialRe
           </span>
         </label>
         {error && <p className="mt-3 text-sm text-error">{error}</p>}
-        <PrimaryButton className="mt-5" onClick={pay} disabled={!agreed || phase === "paying"}>
-          {phase === "paying" ? "결제 확인 중…" : `${formatWon(price)} 결제하고 풀이 보기`}
+        <PrimaryButton className={compact ? "mt-4 h-12" : "mt-5"} onClick={pay} disabled={!agreed || phase === "paying"}>
+          {phase === "paying" ? "결제 확인 중…" : `${formatWon(price)} 결제하고 ${target.type === "reading" ? "풀이" : "답변"} 보기`}
         </PrimaryButton>
         {mockPayment && !STORE_ID && <p className="mt-3 text-center text-xs text-error">테스트 모드: 실제 결제 없이 열립니다.</p>}
       </section>
@@ -194,14 +202,16 @@ export function Unlock({ readingId, productName, price, initialStatus, initialRe
   }
 
   return (
-    <section className="border-t-2 border-gold bg-surface-1 p-6 sm:p-10">
+    <section className={compact ? "bg-surface-2 p-5 sm:p-6" : "border-t-2 border-gold bg-surface-1 p-6 sm:p-10"}>
       {text ? (
         <div className="reading">
           <ReactMarkdown>{text}</ReactMarkdown>
         </div>
       ) : (
         phase === "generating" && (
-          <p className="animate-pulse py-12 text-center text-muted">상담가가 명식을 살펴보고 있습니다… (1~3분 정도 걸려요)</p>
+          <p className="animate-pulse py-12 text-center text-muted">
+            {target.type === "reading" ? "상담가가 명식을 살펴보고 있습니다… (1~3분 정도 걸려요)" : "답변을 작성하고 있습니다… (1분 정도 걸려요)"}
+          </p>
         )
       )}
       {phase === "failed" && (
@@ -212,7 +222,7 @@ export function Unlock({ readingId, productName, price, initialStatus, initialRe
           </button>
         </div>
       )}
-      {phase === "done" && (
+      {phase === "done" && !compact && (
         <p className="mt-10 border-t border-line pt-5 text-xs leading-5 text-muted-soft">
           이 풀이는 AI가 작성한 참고용 콘텐츠입니다. 이 페이지 주소를 저장해 두면 언제든 다시 볼 수 있습니다.
         </p>
