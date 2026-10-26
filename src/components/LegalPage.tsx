@@ -1,8 +1,11 @@
+import { PageHeader } from "./ui";
+
 export function LegalPage({ title, effectiveDate, children }: { title: string; effectiveDate: string; children: React.ReactNode }) {
   return (
-    <article className="legal">
-      <h1 className="font-serif text-2xl font-bold">{title}</h1>
-      <p className="mt-2 text-sm text-muted">시행일: {effectiveDate}</p>
+    <article className="legal mx-auto max-w-3xl px-5 pt-14">
+      <PageHeader eyebrow="POLICY" title={title}>
+        시행일: {effectiveDate}
+      </PageHeader>
       {children}
     </article>
   );

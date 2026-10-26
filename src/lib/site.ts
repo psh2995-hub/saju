@@ -1,5 +1,5 @@
-// 상호명이 확정되면 NEXT_PUBLIC_SITE_NAME 환경 변수만 바꾸면 된다.
-export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "운명다방";
+// 상호명. 환경 변수로 덮어쓸 수 있다.
+export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "시간의길";
 
 /** 전자상거래법상 사이트 하단에 표시해야 하는 사업자 정보. 값이 없으면 '등록 예정'으로 표시된다. */
 export const BUSINESS = {

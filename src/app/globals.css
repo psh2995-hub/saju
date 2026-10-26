@@ -1,91 +1,122 @@
 @import "tailwindcss";
 
+/*
+ * 시간의길 디자인 토큰.
+ * 완전한 검정 캔버스에서 면의 밝기를 한 단계씩 올려 깊이를 만들고(그림자 없음),
+ * 금색은 주요 행동 버튼과 핵심 강조에만 쓴다. 모서리는 각지게.
+ */
 :root {
-  --background: #0d0b1e;
-  --surface: #17142e;
-  --surface-2: #211d40;
-  --border: #322c5c;
-  --foreground: #ece8f7;
-  --muted: #a49fc0;
-  --gold: #e6c27a;
-  --gold-strong: #f2d595;
-  --wood: #6fbf73;
-  --fire: #ef6f5e;
-  --earth: #d9a55b;
-  --metal: #c9cbd6;
-  --water: #5b8fe0;
+  --canvas: #000000;
+  --surface-1: #181818;
+  --surface-2: #202020;
+  --surface-3: #2a2a2a;
+  --line: #313131;
+  --line-strong: #494949;
+
+  --ink: #ffffff;
+  --body: #e6e6e6;
+  --muted: #969696;
+  --muted-soft: #7d7d7d;
+
+  --gold: #ffc000;
+  --gold-dark: #917300;
+  --gold-text: #ffce3e;
+  --error: #ff6b5b;
+
+  /* 오행 — 검정 배경에서 읽히는 밝기 */
+  --wood: #5fbf72;
+  --fire: #ff6b5b;
+  --earth: #e0a84a;
+  --metal: #d6d6d6;
+  --water: #4ea3ff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
+  --color-canvas: var(--canvas);
+  --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
-  --color-line: var(--border);
-  --color-foreground: var(--foreground);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
   --color-muted: var(--muted);
+  --color-muted-soft: var(--muted-soft);
   --color-gold: var(--gold);
-  --color-gold-strong: var(--gold-strong);
+  --color-gold-dark: var(--gold-dark);
+  --color-gold-text: var(--gold-text);
+  --color-error: var(--error);
   --color-wood: var(--wood);
   --color-fire: var(--fire);
   --color-earth: var(--earth);
   --color-metal: var(--metal);
   --color-water: var(--water);
-  --font-serif: var(--font-noto-serif-kr), "Nanum Myeongjo", serif;
-  --font-sans: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+
+  /* 한진그룹산스는 라이선스 확인 후 @font-face로 추가한다. 그 전에는 시스템 한글 글꼴로 대체된다. */
+  --font-sans: "Hanjin Group Sans", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  /* 명식의 한자 글자 전용 */
+  --font-hanja: var(--font-noto-serif-kr), "Nanum Myeongjo", serif;
 }
 
 html {
-  background: var(--background);
+  background: var(--canvas);
 }
 
 body {
-  background: radial-gradient(ellipse 80% 600px at 50% -100px, rgba(230, 194, 122, 0.12), transparent) no-repeat;
-  color: var(--foreground);
+  background: var(--canvas);
+  color: var(--body);
   font-family: var(--font-sans);
   word-break: keep-all;
 }
 
+/* AI 풀이 본문 */
+.reading {
+  color: var(--body);
+}
 .reading h1 {
-  font-family: var(--font-serif);
-  font-size: 1.6rem;
-  font-weight: 700;
-  line-height: 1.4;
-  color: var(--gold-strong);
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--ink);
   margin-bottom: 1.25rem;
 }
-.reading hr {
-  border-color: var(--border);
-  margin: 1.75rem 0;
-}
-.reading em {
-  color: var(--muted);
-}
 .reading h2 {
-  font-family: var(--font-serif);
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--gold-strong);
-  margin: 2.25rem 0 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
+  font-size: 1.375rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 2.75rem 0 0.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--line);
 }
-.reading h2:first-child {
-  margin-top: 0;
+.reading h2::before {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 2px;
+  margin-bottom: 0.875rem;
+  background: var(--gold);
+}
+.reading h1 + h2,
+.reading h2:first-child,
+.reading hr + h2 {
+  border-top: 0;
+  padding-top: 0;
 }
 .reading h3 {
-  font-size: 1.1rem;
+  font-size: 1.0625rem;
   font-weight: 700;
-  margin: 1.5rem 0 0.5rem;
+  color: var(--ink);
+  margin: 1.75rem 0 0.5rem;
 }
 .reading p {
-  line-height: 1.9;
+  line-height: 1.85;
   margin: 0.75rem 0;
 }
 .reading ul,
 .reading ol {
   margin: 0.75rem 0;
   padding-left: 1.25rem;
-  line-height: 1.9;
+  line-height: 1.85;
 }
 .reading ul {
   list-style: disc;
@@ -93,19 +124,33 @@ body {
 .reading ol {
   list-style: decimal;
 }
+.reading li::marker {
+  color: var(--gold);
+}
 .reading strong {
-  color: var(--gold-strong);
+  color: var(--gold-text);
+  font-weight: 700;
+}
+.reading hr {
+  border-color: var(--line);
+  margin: 2rem 0;
+}
+.reading em {
+  color: var(--muted);
 }
 
+/* 약관·정책 */
 .legal h2 {
-  font-size: 1.1rem;
+  font-size: 1.0625rem;
   font-weight: 700;
+  color: var(--ink);
   margin: 2rem 0 0.5rem;
 }
 .legal p,
 .legal li {
   line-height: 1.8;
   color: var(--muted);
+  font-size: 0.9375rem;
 }
 .legal ol,
 .legal ul {
