@@ -4,64 +4,24 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { MONTH_EN } from "@/lib/en";
 import { readingPath } from "@/lib/i18n";
-import { SPREAD_SIZE, ZODIAC_TAROT_TOPICS, type TarotTopic } from "@/lib/tarot-config";
+import { PLACES, placeById } from "@/lib/places";
+import { SPREAD_SIZE, TAROT_TOPICS_EN, type TarotTopic } from "@/lib/tarot-config";
 import { sunSign } from "@/lib/zodiac-signs";
 import { Field, inputClass, PrimaryButton, Segmented } from "../ui";
 
 const FALLBACK_ERROR = "Something went wrong. Please try again in a moment.";
 
-/** 출생지 시간대. 서버·브라우저의 시간대 목록 차이로 화면이 어긋나지 않게 고정 목록을 쓴다. */
-const TIME_ZONES: [string, string][] = [
-  ["", "Same as this device"],
-  ["Pacific/Honolulu", "Honolulu"],
-  ["America/Anchorage", "Anchorage"],
-  ["America/Los_Angeles", "Los Angeles · Pacific"],
-  ["America/Vancouver", "Vancouver"],
-  ["America/Phoenix", "Phoenix"],
-  ["America/Denver", "Denver · Mountain"],
-  ["America/Chicago", "Chicago · Central"],
-  ["America/Mexico_City", "Mexico City"],
-  ["America/New_York", "New York · Eastern"],
-  ["America/Toronto", "Toronto"],
-  ["America/Bogota", "Bogotá"],
-  ["America/Lima", "Lima"],
-  ["America/Sao_Paulo", "São Paulo"],
-  ["America/Argentina/Buenos_Aires", "Buenos Aires"],
-  ["Europe/London", "London"],
-  ["Europe/Dublin", "Dublin"],
-  ["Europe/Lisbon", "Lisbon"],
-  ["Europe/Madrid", "Madrid"],
-  ["Europe/Paris", "Paris"],
-  ["Europe/Amsterdam", "Amsterdam"],
-  ["Europe/Berlin", "Berlin"],
-  ["Europe/Rome", "Rome"],
-  ["Europe/Stockholm", "Stockholm"],
-  ["Europe/Warsaw", "Warsaw"],
-  ["Europe/Athens", "Athens"],
-  ["Europe/Istanbul", "Istanbul"],
-  ["Europe/Moscow", "Moscow"],
-  ["Africa/Cairo", "Cairo"],
-  ["Africa/Lagos", "Lagos"],
-  ["Africa/Johannesburg", "Johannesburg"],
-  ["Asia/Dubai", "Dubai"],
-  ["Asia/Kolkata", "India"],
-  ["Asia/Bangkok", "Bangkok"],
-  ["Asia/Ho_Chi_Minh", "Ho Chi Minh City"],
-  ["Asia/Jakarta", "Jakarta"],
-  ["Asia/Singapore", "Singapore"],
-  ["Asia/Kuala_Lumpur", "Kuala Lumpur"],
-  ["Asia/Manila", "Manila"],
-  ["Asia/Hong_Kong", "Hong Kong"],
-  ["Asia/Taipei", "Taipei"],
-  ["Asia/Shanghai", "China"],
-  ["Asia/Seoul", "Seoul · Korea"],
-  ["Asia/Tokyo", "Tokyo"],
-  ["Australia/Perth", "Perth"],
-  ["Australia/Brisbane", "Brisbane"],
-  ["Australia/Sydney", "Sydney"],
-  ["Australia/Melbourne", "Melbourne"],
-  ["Pacific/Auckland", "Auckland"],
-];
+const deviceTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+/** 출생 도시 선택. 목록에 없으면 이 기기의 시간대를 쓴다(이때 별자리의 상승궁은 계산하지 않는다). */
+function PlaceSelect({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  return (
+    <select className={inputClass} value={value} onChange={(e) => onChange(e.target.value)} aria-label="Birth city">
+      <option value="">Not listed — use this device&apos;s time zone</option>
+      {PLACES.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+    </select>
+  );
+}
 
 const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
 const daysIn = (year: number, month: number) => new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -136,7 +96,7 @@ export function EnBirthForm({ kind, submitLabel }: { kind: "saju" | "newyear"; s
     timeUnknown: false,
     hour: 12,
     minute: 0,
-    timeZone: "",
+    placeId: "",
   });
   const { submitting, error, run } = useSubmit();
   const set = <K extends keyof typeof v>(key: K, value: (typeof v)[K]) => setV({ ...v, [key]: value });
@@ -145,7 +105,7 @@ export function EnBirthForm({ kind, submitLabel }: { kind: "saju" | "newyear"; s
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        const timeZone = v.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const timeZone = placeById(v.placeId)?.timeZone ?? deviceTimeZone();
         void run(kind, {
           name: v.name,
           gender: v.gender,
@@ -173,24 +133,11 @@ export function EnBirthForm({ kind, submitLabel }: { kind: "saju" | "newyear"; s
         <DateFields year={v.year} month={v.month} day={v.day} onChange={(d) => setV({ ...v, ...d })} />
       </Field>
       <Field label="Time of birth">
-        <div className="grid grid-cols-2 gap-2">
-          <select className={inputClass} value={v.hour} disabled={v.timeUnknown} onChange={(e) => set("hour", +e.target.value)} aria-label="Hour">
-            {range(0, 23).map((h) => <option key={h} value={h}>{hourLabel(h)}</option>)}
-          </select>
-          <select className={inputClass} value={v.minute} disabled={v.timeUnknown} onChange={(e) => set("minute", +e.target.value)} aria-label="Minute">
-            {range(0, 59).map((m) => <option key={m} value={m}>:{String(m).padStart(2, "0")}</option>)}
-          </select>
-        </div>
-        <label className="mt-3 flex items-center gap-2 text-sm text-muted">
-          <input type="checkbox" className="accent-gold" checked={v.timeUnknown} onChange={(e) => set("timeUnknown", e.target.checked)} /> I don&apos;t
-          know my birth time
-        </label>
+        <TimeFields hour={v.hour} minute={v.minute} unknown={v.timeUnknown} onChange={(t) => setV({ ...v, ...t })} />
       </Field>
-      <Field label="Where were you born? (time zone)">
-        <select className={inputClass} value={v.timeZone} onChange={(e) => set("timeZone", e.target.value)}>
-          {TIME_ZONES.map(([value, label]) => <option key={label} value={value}>{label}</option>)}
-        </select>
-        <p className="mt-2 text-xs text-muted-soft">Enter the clock time where you were born. Daylight saving time is handled for you.</p>
+      <Field label="Where were you born?">
+        <PlaceSelect value={v.placeId} onChange={(id) => set("placeId", id)} />
+        <p className="mt-2 text-xs text-muted-soft">Pick your birth city or the nearest one in the same time zone. We use the local clock time there, and handle daylight saving for you.</p>
       </Field>
       {error && <p className="text-sm text-error">{error}</p>}
       <PrimaryButton type="submit" disabled={submitting}>
@@ -200,15 +147,87 @@ export function EnBirthForm({ kind, submitLabel }: { kind: "saju" | "newyear"; s
   );
 }
 
-export function ZodiacTarotForm() {
-  const [birth, setBirth] = useState({ year: 1995, month: 1, day: 1 });
-  const [name, setName] = useState("");
+function TimeFields({
+  hour,
+  minute,
+  unknown,
+  onChange,
+}: {
+  hour: number;
+  minute: number;
+  unknown: boolean;
+  onChange: (v: { hour: number; minute: number; timeUnknown: boolean }) => void;
+}) {
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2">
+        <select className={inputClass} value={hour} disabled={unknown} onChange={(e) => onChange({ hour: +e.target.value, minute, timeUnknown: unknown })} aria-label="Hour">
+          {range(0, 23).map((h) => <option key={h} value={h}>{hourLabel(h)}</option>)}
+        </select>
+        <select className={inputClass} value={minute} disabled={unknown} onChange={(e) => onChange({ hour, minute: +e.target.value, timeUnknown: unknown })} aria-label="Minute">
+          {range(0, 59).map((m) => <option key={m} value={m}>:{String(m).padStart(2, "0")}</option>)}
+        </select>
+      </div>
+      <label className="mt-3 flex items-center gap-2 text-sm text-muted">
+        <input type="checkbox" className="accent-gold" checked={unknown} onChange={(e) => onChange({ hour, minute, timeUnknown: e.target.checked })} /> I don&apos;t
+        know my birth time
+      </label>
+    </>
+  );
+}
+
+/** 별자리(서양 점성술) 입력 */
+export function ZodiacForm() {
+  const [v, setV] = useState({ name: "", year: 1995, month: 1, day: 1, hour: 12, minute: 0, timeUnknown: false, placeId: "" });
+  const { submitting, error, run } = useSubmit();
+  const sign = sunSign(v.month, v.day);
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void run("zodiac", {
+          name: v.name,
+          year: v.year,
+          month: v.month,
+          day: v.day,
+          hour: v.timeUnknown ? null : v.hour,
+          minute: v.timeUnknown ? null : v.minute,
+          placeId: v.placeId || undefined,
+          timeZone: placeById(v.placeId)?.timeZone ?? deviceTimeZone(),
+        });
+      }}
+      className="space-y-6 bg-surface-1 p-6 sm:p-8"
+    >
+      <Field label="Date of birth">
+        <DateFields year={v.year} month={v.month} day={v.day} onChange={(d) => setV({ ...v, ...d })} />
+        <p className="mt-3 text-sm text-gold">
+          {sign.symbol} {sign.name} <span className="text-muted">· {sign.dates}</span>
+        </p>
+      </Field>
+      <Field label="Time of birth">
+        <TimeFields hour={v.hour} minute={v.minute} unknown={v.timeUnknown} onChange={(t) => setV({ ...v, ...t })} />
+      </Field>
+      <Field label="Where were you born?">
+        <PlaceSelect value={v.placeId} onChange={(placeId) => setV({ ...v, placeId })} />
+        <p className="mt-2 text-xs text-muted-soft">Your birth time and city reveal your Moon and Rising signs. Pick the nearest city if yours isn&apos;t listed.</p>
+      </Field>
+      <Field label="Name (optional)">
+        <input className={inputClass} value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} maxLength={20} placeholder="Alex" />
+      </Field>
+      {error && <p className="text-sm text-error">{error}</p>}
+      <PrimaryButton type="submit" disabled={submitting}>
+        {submitting ? "Reading the sky…" : "See my zodiac chart — free"}
+      </PrimaryButton>
+    </form>
+  );
+}
+
+export function TarotForm() {
   const [topic, setTopic] = useState<TarotTopic>("love");
   const [question, setQuestion] = useState("");
   const [picks, setPicks] = useState<number[]>([]);
   const { submitting, error, run } = useSubmit();
-  const sign = sunSign(birth.month, birth.day);
-  const positions = ZODIAC_TAROT_TOPICS[topic].positions;
+  const positions = TAROT_TOPICS_EN[topic].positions;
 
   function toggle(i: number) {
     setPicks((p) => (p.includes(i) ? p.filter((x) => x !== i) : p.length < 3 ? [...p, i] : p));
@@ -216,25 +235,16 @@ export function ZodiacTarotForm() {
 
   return (
     <div className="space-y-6 bg-surface-1 p-6 sm:p-8">
-      <Field label="Your birthday">
-        <DateFields {...birth} onChange={setBirth} />
-        <p className="mt-3 text-sm text-gold">
-          {sign.symbol} {sign.name} <span className="text-muted">· {sign.dates}</span>
-        </p>
-      </Field>
-      <Field label="Name (optional)">
-        <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} maxLength={20} placeholder="Alex" />
-      </Field>
       <Field label="What's on your mind?">
         <div className="grid grid-cols-2 gap-px border border-line-strong bg-line-strong sm:grid-cols-4">
-          {(Object.keys(ZODIAC_TAROT_TOPICS) as TarotTopic[]).map((t) => (
+          {(Object.keys(TAROT_TOPICS_EN) as TarotTopic[]).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTopic(t)}
               className={`h-11 text-sm transition ${topic === t ? "bg-ink font-bold text-surface-2" : "bg-canvas text-muted hover:text-ink"}`}
             >
-              {ZODIAC_TAROT_TOPICS[t].label}
+              {TAROT_TOPICS_EN[t].label}
             </button>
           ))}
         </div>
@@ -275,7 +285,7 @@ export function ZodiacTarotForm() {
       {error && <p className="text-sm text-error">{error}</p>}
       <PrimaryButton
         type="button"
-        onClick={() => void run("zodiac", { ...birth, name, topic, question, picks })}
+        onClick={() => void run("tarot", { topic, question, picks })}
         disabled={submitting || picks.length !== 3}
       >
         {submitting ? "Turning the cards…" : "Reveal my cards"}

@@ -1,18 +1,26 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Eyebrow, ghostButtonClass, Mark } from "@/components/ui";
 import { formatPrice, SITE_NAME_EN } from "@/lib/i18n";
 import { PRODUCTS } from "@/lib/products";
+import { signByKey } from "@/lib/zodiac-signs";
 
-// 해외 방문자는 서양 별자리를 더 친숙하게 여기므로 별자리 타로를 맨 앞에 둔다.
+// 해외 방문자는 서양 별자리를 더 친숙하게 여기므로 별자리를 맨 앞에, 타로를 그다음에 둔다.
 const PRODUCT_CARDS = [
   {
-    href: "/en/zodiac-tarot",
-    eyebrow: "ZODIAC TAROT",
-    title: "Zodiac Tarot",
-    text: "Your sun sign has its own tarot card. Add three cards drawn for your question, plus your Korean zodiac animal, and get a reading that is unmistakably yours.",
-    free: "Sign & cards free · in-depth reading",
+    href: "/en/zodiac",
+    eyebrow: "ZODIAC",
+    title: "Zodiac Reading",
+    text: "Go beyond your sun sign. Your Moon, Rising, Venus and Mars, calculated from real planet positions at the moment you were born.",
+    free: "Birth chart free · in-depth reading",
     price: PRODUCTS.zodiac.price,
+  },
+  {
+    href: "/en/tarot",
+    eyebrow: "TAROT",
+    title: "Tarot Reading",
+    text: "Hold a question in mind and pick three cards from the full 78-card deck. See what they mean for free, then get a reading woven around your question.",
+    free: "Card meanings free · in-depth reading",
+    price: PRODUCTS.tarot.price,
   },
   {
     href: "/en/forecast",
@@ -32,6 +40,13 @@ const PRODUCT_CARDS = [
   },
 ];
 
+// 견본: 1998-08-02 08:30 뉴욕 출생의 실제 계산 결과
+const SAMPLE = [
+  ["Sun", "leo"],
+  ["Moon", "sagittarius"],
+  ["Rising", "virgo"],
+] as const;
+
 export default function EnglishHome() {
   return (
     <div>
@@ -44,15 +59,15 @@ export default function EnglishHome() {
             read the Korean way
           </h1>
           <p className="mt-6 max-w-md text-[17px] leading-8 text-muted">
-            {SITE_NAME_EN} is a little fortune café from Seoul. Start with the zodiac sign you know, then meet the Korean zodiac that Koreans check
-            every new year.
+            {SITE_NAME_EN} is a little fortune café from Seoul. Start with the zodiac and tarot you know, then meet the Korean zodiac that Koreans
+            check every new year.
           </p>
           <div className="mt-10 flex flex-wrap gap-3">
-            <Link href="/en/zodiac-tarot" className="inline-flex h-14 items-center bg-gold px-8 text-base text-black transition hover:bg-gold-dark hover:text-ink">
-              Draw my zodiac tarot
+            <Link href="/en/zodiac" className="inline-flex h-14 items-center bg-gold px-8 text-base text-black transition hover:bg-gold-dark hover:text-ink">
+              Read my zodiac
             </Link>
-            <Link href="/en/forecast" className={ghostButtonClass}>
-              My K-Zodiac forecast
+            <Link href="/en/tarot" className={ghostButtonClass}>
+              Draw tarot cards
             </Link>
           </div>
         </div>
@@ -60,44 +75,43 @@ export default function EnglishHome() {
         {/* 결과 화면 일부를 보여 주는 견본 */}
         <div className="bg-surface-1 p-6 sm:p-8">
           <div className="flex items-center justify-between text-xs text-muted">
-            <span>Zodiac Tarot</span>
-            <span>Born Aug 2, 1998</span>
+            <span>Zodiac chart</span>
+            <span>Aug 2, 1998 · New York</span>
           </div>
-          <div className="mt-5 flex items-center gap-5">
-            <Image src="/tarot/major-8.webp" alt="Strength, the card of Leo" width={350} height={600} unoptimized className="w-24" />
-            <div>
-              <p className="text-4xl text-gold">{"♌\uFE0E"}</p>
-              <p className="mt-1 text-xl text-ink">Leo</p>
-              <p className="mt-1 text-xs text-muted">Fire · ruled by the Sun</p>
-              <p className="mt-3 text-xs text-muted">Card: Strength</p>
-            </div>
+          <div className="mt-5 grid grid-cols-3 gap-px bg-line text-center">
+            {SAMPLE.map(([point, key]) => {
+              const s = signByKey(key);
+              return (
+                <div key={point} className="bg-surface-2 px-2 py-5">
+                  <p className="text-xs text-gold">{point}</p>
+                  <p className="mt-2 text-3xl text-ink">{s.symbol}</p>
+                  <p className="mt-1 text-sm text-ink">{s.name}</p>
+                </div>
+              );
+            })}
           </div>
           <div className="mt-6 border-t border-line pt-5">
             <p className="text-xs text-gold">
               Korean zodiac: Yang Earth Tiger <span className="font-[family-name:var(--font-hanja)]">戊寅</span>
             </p>
             <p className="mt-2 text-sm leading-6 text-muted">
-              A Leo with a Tiger&apos;s heart: brave, independent, and happiest with room to roam.
+              A warm Leo heart, a free-roaming Sagittarius Moon and a careful Virgo first impression — with a Tiger&apos;s courage underneath.
             </p>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-5xl px-5">
-        <div className="grid gap-px bg-line md:grid-cols-3">
-          {PRODUCT_CARDS.map((p, i) => (
-            <Link
-              key={p.href}
-              href={p.href}
-              className={`group flex flex-col bg-canvas p-8 transition hover:bg-surface-1 ${i === 0 ? "border-t-2 border-gold" : ""}`}
-            >
+        <div className="grid gap-px bg-line md:grid-cols-2">
+          {PRODUCT_CARDS.map((p) => (
+            <Link key={p.href} href={p.href} className="group bg-canvas p-8 transition hover:bg-surface-1 sm:p-10">
               <Eyebrow>{p.eyebrow}</Eyebrow>
-              <p className="mt-4 text-[26px] leading-tight text-ink">{p.title}</p>
-              <p className="mt-3 flex-1 text-[15px] leading-7 text-muted">{p.text}</p>
-              <div className="mt-8 border-t border-line pt-5 text-sm text-muted">
-                <p>{p.free}</p>
-                <p className="mt-2 text-lg text-ink">{formatPrice(p.price, "en")}</p>
-              </div>
+              <p className="mt-4 text-[28px] text-ink">{p.title}</p>
+              <p className="mt-3 text-[15px] leading-7 text-muted">{p.text}</p>
+              <p className="mt-8 flex items-baseline justify-between border-t border-line pt-5 text-sm text-muted">
+                {p.free}
+                <span className="text-xl text-ink">{formatPrice(p.price, "en")}</span>
+              </p>
             </Link>
           ))}
         </div>
@@ -110,7 +124,7 @@ export default function EnglishHome() {
         </div>
         <ol className="mt-8 grid gap-8 md:grid-cols-3">
           {[
-            ["No sign-up", "Just enter your birthday. Bookmark your result page to come back any time."],
+            ["No sign-up", "Just enter your birthday or pick your cards. Bookmark your result page to come back any time."],
             ["Ready in minutes", "Unlock the full reading and an AI reader writes it for you on the spot, in 1–3 minutes."],
             ["For reflection", "Readings are for entertainment and reflection. Talk to a professional before big decisions."],
           ].map(([title, text], i) => (

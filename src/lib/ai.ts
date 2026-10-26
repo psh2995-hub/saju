@@ -6,8 +6,8 @@ import type { NewYearChart } from "./newyear";
 import type { SajuChart, SajuInput } from "./saju";
 import type { FollowupRow, ReadingRow } from "./supabase";
 import type { TarotChart, TarotInput } from "./tarot";
-import type { ZodiacTarotChart, ZodiacTarotInput } from "./zodiac";
-import { SIGNS } from "./zodiac-signs";
+import type { ZodiacChart, ZodiacInput } from "./zodiac";
+import { POINTS, signByKey } from "./zodiac-signs";
 
 const MODEL = "claude-opus-5-5";
 
@@ -39,7 +39,9 @@ Writing guidelines:
 const SYSTEM_SAJU_EN =
   "You are a Korean Saju (Four Pillars of Destiny) master with 30 years of experience who introduces Korean astrology to readers around the world. You explain Korean concepts simply and vividly, and when it helps, you briefly compare them with Western astrology the reader may know.";
 const SYSTEM_ZODIAC_EN =
-  "You are a warm, insightful tarot reader who is also fluent in Western astrology and the Korean zodiac. You know the Rider-Waite deck's symbolism deeply and describe each card's imagery vividly as you interpret it.";
+  "You are a warm, insightful astrologer with deep knowledge of Western tropical astrology, who also knows the Korean zodiac. You read a birth chart as a whole, explaining how the placements work together in plain, vivid language.";
+const SYSTEM_TAROT_EN =
+  "You are a warm, insightful tarot reader. You know the Rider-Waite deck's symbolism deeply and describe each card's imagery vividly as you interpret it.";
 
 const SYSTEM_SAJU = "당신은 30년 경력의 명리학 상담가입니다. 자평명리 이론에 밝고, 어려운 용어는 일상 언어로 풀어 설명합니다.";
 const SYSTEM_TAROT =
@@ -61,20 +63,21 @@ ${pillars}
 대운: ${daeun}`;
 }
 
-function describeZodiacTarot(input: ZodiacTarotInput, chart: ZodiacTarotChart) {
-  const sign = SIGNS.find((s) => s.key === chart.sign)!;
-  const cards = chart.cards
-    .map((c, i) => `${i + 1}. [${c.position}] ${c.name} ${c.reversed ? "reversed" : "upright"} — ${c.meaning}`)
+function describeZodiac(input: ZodiacInput, chart: ZodiacChart) {
+  const placements = chart.placements
+    .map((p) => {
+      const sign = signByKey(p.sign);
+      return `${POINTS[p.point].name} (${POINTS[p.point].meaning}): ${sign.name} ${p.degree}° — ${sign.element}, ${sign.modality}, ruled by ${sign.ruler}`;
+    })
     .join("\n");
+  const time = input.hour === null ? "unknown (calculated for noon)" : `${input.hour}:${String(input.minute ?? 0).padStart(2, "0")}`;
   return `Name: ${input.name || "(not given)"}
-Birthday: ${input.year}-${input.month}-${input.day}
-Sun sign: ${sign.name} ${sign.symbol} (${sign.dates}) — ${sign.element} sign, ${sign.modality}, ruled by ${sign.ruler}; keywords: ${sign.keywords}
-Birth card of the sign: ${chart.birthCard.name} — ${chart.birthCard.meaning}
+Born: ${input.year}-${input.month}-${input.day}, time ${time}, ${chart.place ?? "birthplace not listed"} (${input.timeZone})
+[Placements]
+${placements}
+${chart.placements.some((p) => p.point === "rising") ? "" : "Rising sign: unknown (needs birth time and city)\n"}${chart.moonUncertain ? "Note: the Moon changed signs on this birthday, so the Moon sign is uncertain without a birth time.\n" : ""}Element balance: ${Object.entries(chart.elements).map(([k, v]) => `${k} ${v}`).join(", ")}
 Korean zodiac (by birth year, counted from Ipchun): ${chart.animal.ganZhi} ${chart.animal.name} — ${chart.animal.trait}
-Topic: ${chart.topicLabel}
-Question: ${input.question || "(no specific question; read the topic as a whole)"}
-[Cards drawn]
-${cards}`;
+Current sky (${chart.sky.date}): Jupiter in ${signByKey(chart.sky.jupiter).name}, Saturn in ${signByKey(chart.sky.saturn).name}`;
 }
 
 function describeTarot(input: TarotInput, chart: TarotChart) {
@@ -84,6 +87,14 @@ function describeTarot(input: TarotInput, chart: TarotChart) {
   return `주제: ${chart.topicLabel}
 질문: ${input.question || "(구체적인 질문 없이 주제 전반에 대해)"}
 [뽑힌 카드]
+${cards}`;
+}
+
+function describeTarotEn(input: TarotInput, chart: TarotChart) {
+  const cards = chart.cards.map((c, i) => `${i + 1}. [${c.position}] ${c.name} ${c.reversed ? "reversed" : "upright"} — ${c.meaning}`).join("\n");
+  return `Topic: ${chart.topicLabel}
+Question: ${input.question || "(no specific question; read the topic as a whole)"}
+[Cards drawn]
 ${cards}`;
 }
 
@@ -119,21 +130,33 @@ function requestForEn(reading: ReadingRow): Request {
   const chart = reading.chart as never;
   switch (reading.kind) {
     case "zodiac": {
-      const c = chart as ZodiacTarotChart;
-      const sign = SIGNS.find((s) => s.key === c.sign)!;
+      const c = chart as ZodiacChart;
+      const sun = signByKey(c.placements[0].sign);
       return {
         system: SYSTEM_ZODIAC_EN,
-        context: describeZodiacTarot(input, c),
-        instructions: `Write an in-depth Zodiac Tarot reading for the spread above, in this order (about 900–1,300 words in total):
-## ${sign.name} and Your Question (how the sign's nature and its birth card, ${c.birthCard.name}, color this question)
-## The Cards (one ### subsection per card, tying each card to its position and to ${sign.name})
-## The Story the Three Cards Tell
-## The Answer to Your Question
+        context: describeZodiac(input, c),
+        instructions: `Write an in-depth zodiac (Western astrology) reading for the birth chart above, in this order (about 1,300–1,800 words in total):
+## Your Big Three (the Sun in ${sun.name}, the Moon${c.placements.some((p) => p.point === "rising") ? " and your Rising sign" : "; mention briefly that the Rising sign needs a birth time and city"} — how they work together)
+## Love & Relationships (Venus, Mars and the Moon)
+## Work, Money & Talents (the Sun, Mercury and Mars)
+## Your Elements in Balance (what is strong, what is missing, and how to balance it)
+## The Year Ahead (read Jupiter and Saturn in the current sky against this chart; don't invent other transits or exact dates)
 ## Your Korean Zodiac Twist (a short section on the ${c.animal.name} and what it adds)
 ## Advice`,
         rules: COMMON_RULES_EN,
       };
     }
+    case "tarot":
+      return {
+        system: SYSTEM_TAROT_EN,
+        context: describeTarotEn(input, chart),
+        instructions: `Write an in-depth tarot reading for the spread above, in this order (about 900–1,300 words in total):
+## The Cards (one ### subsection per card, tied to its position)
+## The Story the Three Cards Tell
+## The Answer to Your Question
+## Advice`,
+        rules: COMMON_RULES_EN,
+      };
     case "newyear": {
       const c = chart as NewYearChart;
       return {

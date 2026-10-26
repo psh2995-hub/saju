@@ -6,7 +6,7 @@ import { isKindAvailable, PRODUCTS, type ReadingKind } from "@/lib/products";
 import { calculateSaju, validateSajuInput } from "@/lib/saju";
 import { db } from "@/lib/supabase";
 import { drawTarot, validateTarotInput } from "@/lib/tarot";
-import { drawZodiacTarot, validateZodiacTarotInput } from "@/lib/zodiac";
+import { calculateZodiac, validateZodiacInput } from "@/lib/zodiac";
 import type { Json } from "@/lib/database.types";
 
 /** 영문 페이지에서 보여 줄 입력 오류 문구. 계산 모듈의 한국어 메시지를 키로 쓴다. */
@@ -28,7 +28,7 @@ function fail(message: string, lang: Lang, status = 400) {
   return NextResponse.json({ error: lang === "en" ? (ERRORS_EN[message] ?? ERRORS_EN["입력값을 확인해 주세요."]) : message }, { status });
 }
 
-function build(kind: string, raw: unknown): { input: object; chart: object } | null {
+function build(kind: string, raw: unknown, lang: Lang): { input: object; chart: object } | null {
   switch (kind) {
     case "saju": {
       const input = validateSajuInput(raw);
@@ -44,11 +44,11 @@ function build(kind: string, raw: unknown): { input: object; chart: object } | n
     }
     case "tarot": {
       const input = validateTarotInput(raw);
-      return { input, chart: drawTarot(input) };
+      return { input, chart: drawTarot(input, lang) };
     }
     case "zodiac": {
-      const input = validateZodiacTarotInput(raw);
-      return { input, chart: drawZodiacTarot(input) };
+      const input = validateZodiacInput(raw);
+      return { input, chart: calculateZodiac(input) };
     }
     default:
       return null;
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
   let built: ReturnType<typeof build>;
   try {
-    built = build(kind, body.input);
+    built = build(kind, body.input, lang);
   } catch (e) {
     return fail(e instanceof Error ? e.message : "입력값을 확인해 주세요.", lang);
   }

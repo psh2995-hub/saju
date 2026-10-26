@@ -1,6 +1,6 @@
 import { randomInt } from "node:crypto";
 import { TAROT_CARDS } from "./tarot-cards";
-import { SPREAD_SIZE, TAROT_TOPICS, type TarotTopic } from "./tarot-config";
+import { SPREAD_SIZE, TAROT_TOPICS, TAROT_TOPICS_EN, type TarotTopic } from "./tarot-config";
 
 export type TarotInput = {
   topic: TarotTopic;
@@ -55,7 +55,7 @@ export function drawCards(picks: number[], positions: readonly string[], lang: "
   });
 }
 
-export function drawTarot(input: TarotInput): TarotChart {
-  const topic = TAROT_TOPICS[input.topic];
-  return { topicLabel: topic.label, cards: drawCards(input.picks, topic.positions) };
+export function drawTarot(input: TarotInput, lang: "ko" | "en" = "ko"): TarotChart {
+  const topic = (lang === "en" ? TAROT_TOPICS_EN : TAROT_TOPICS)[input.topic];
+  return { topicLabel: topic.label, cards: drawCards(input.picks, topic.positions, lang) };
 }

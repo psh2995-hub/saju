@@ -8,15 +8,16 @@ import { fontVariables } from "../../fonts";
 import "../../globals.css";
 
 const NAV = [
-  ["/en/zodiac-tarot", "Zodiac Tarot"],
+  ["/en/zodiac", "Zodiac"],
+  ["/en/tarot", "Tarot"],
   ["/en/forecast", "K-Zodiac Forecast"],
-  ["/en/saju", "Birth Chart"],
+  ["/en/saju", "Korean Birth Chart"],
 ] as const;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: `${SITE_NAME_EN} — Zodiac Tarot & Korean Astrology`, template: `%s | ${SITE_NAME_EN}` },
-  description: "Zodiac tarot readings and Korean astrology (Saju) forecasts, from a little fortune café in Korea.",
+  title: { default: `${SITE_NAME_EN} — Zodiac, Tarot & Korean Astrology`, template: `%s | ${SITE_NAME_EN}` },
+  description: "Zodiac birth charts, tarot readings and Korean astrology (Saju) forecasts, from a little fortune café in Korea.",
   alternates: { languages: { ko: "/", en: "/en" } },
 };
 
@@ -72,7 +73,7 @@ export default function EnglishLayout({ children }: LayoutProps<"/en">) {
             </div>
             <p className="mt-6 border-t border-line pt-6 text-xs leading-5 text-muted-soft">
               Every reading is written by AI based on tarot, Western astrology and Korean Saju traditions. It is meant for entertainment and reflection,
-              and is not medical, legal or financial advice. Prices are charged in Korean won (KRW); dollar amounts are approximate.
+              and is not medical, legal or financial advice. Prices are shown in US dollars, rounded; payment is processed in Korean won (KRW).
             </p>
           </div>
         </footer>

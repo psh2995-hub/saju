@@ -3,14 +3,16 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NewYearViewEn } from "@/components/en/NewYearViewEn";
 import { SajuChartViewEn } from "@/components/en/SajuChartViewEn";
-import { ZodiacTarotView } from "@/components/en/ZodiacTarotView";
+import { ZodiacView } from "@/components/en/ZodiacView";
 import { ReadingActions } from "@/components/ReadingActions";
+import { TarotView } from "@/components/TarotView";
 import type { NewYearChart } from "@/lib/newyear";
 import { mockPaymentAllowed } from "@/lib/payments";
 import { isEnKind, PRODUCT_NAMES_EN, type EnKind } from "@/lib/products";
 import type { SajuChart, SajuInput } from "@/lib/saju";
 import { getFollowups, getReading, type ReadingRow } from "@/lib/supabase";
-import type { ZodiacTarotChart, ZodiacTarotInput } from "@/lib/zodiac";
+import type { TarotChart, TarotInput } from "@/lib/tarot";
+import type { ZodiacChart, ZodiacInput } from "@/lib/zodiac";
 
 export const metadata: Metadata = { title: "Your reading", robots: { index: false } };
 
@@ -24,7 +26,8 @@ export default function EnReadingPage(props: PageProps<"/en/r/[id]">) {
 
 const DESCRIPTION: Record<EnKind, string> = {
   zodiac:
-    "Your sign, its tarot card and your three cards woven into one story that answers your question, with a Korean zodiac twist and practical advice.",
+    "Your Big Three read together, then love, work and money, your element balance and the year ahead under Jupiter and Saturn, with a Korean zodiac twist.",
+  tarot: "Your three cards woven into one story that answers your question, with practical advice.",
   newyear:
     "The year at a glance, then money, career, love and health, and a month-by-month guide from February through next January, all read from your own chart.",
   saju: "Your core nature, five elements, wealth, career, love, health, your ten-year luck cycles and the next two years, in one in-depth reading.",
@@ -39,7 +42,9 @@ function ChartView({ reading }: { reading: ReadingRow & { kind: EnKind } }) {
   const input = reading.input as never;
   switch (reading.kind) {
     case "zodiac":
-      return <ZodiacTarotView input={input as ZodiacTarotInput} chart={reading.chart as unknown as ZodiacTarotChart} />;
+      return <ZodiacView input={input as ZodiacInput} chart={reading.chart as unknown as ZodiacChart} />;
+    case "tarot":
+      return <TarotView input={input as TarotInput} chart={reading.chart as unknown as TarotChart} lang="en" />;
     case "newyear":
       return <NewYearViewEn input={input as SajuInput} chart={reading.chart as unknown as NewYearChart} />;
     case "saju":

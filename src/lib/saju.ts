@@ -155,7 +155,7 @@ function zoneOffsetMs(utc: number, timeZone: string) {
 }
 
 /** 출생지 벽시계 시각을 UTC 밀리초로 바꾼다. */
-function zonedWallClockToUtc(s: Solar, timeZone: string) {
+export function zonedWallClockToUtc(s: Solar, timeZone: string) {
   const wall = Date.UTC(s.getYear(), s.getMonth() - 1, s.getDay(), s.getHour(), s.getMinute(), s.getSecond());
   // 오프셋은 UTC 시점에 따라 달라지므로 한 번 더 맞춘다(서머타임 경계 근처).
   return wall - zoneOffsetMs(wall - zoneOffsetMs(wall, timeZone), timeZone);
