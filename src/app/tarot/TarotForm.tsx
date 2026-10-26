@@ -36,15 +36,15 @@ export function TarotForm() {
   }
 
   return (
-    <div className="space-y-5 rounded-2xl border border-line bg-surface p-6">
+    <div className="space-y-6 bg-surface-1 p-6 sm:p-8">
       <Field label="무엇이 궁금한가요?">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-px border border-line-strong bg-line-strong sm:grid-cols-4">
           {(Object.keys(TAROT_TOPICS) as TarotTopic[]).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTopic(t)}
-              className={`rounded-lg border py-2 text-sm ${topic === t ? "border-gold bg-gold/10 text-gold-strong" : "border-line text-muted"}`}
+              className={`h-11 text-sm transition ${topic === t ? "bg-ink font-bold text-surface-2" : "bg-canvas text-muted hover:text-ink"}`}
             >
               {TAROT_TOPICS[t].label}
             </button>
@@ -53,7 +53,7 @@ export function TarotForm() {
       </Field>
       <Field label="구체적인 질문 (선택)">
         <textarea
-          className={`${inputClass} h-24 resize-none`}
+          className={`${inputClass} h-28 resize-none py-3`}
           value={question}
           maxLength={300}
           onChange={(e) => setQuestion(e.target.value)}
@@ -61,7 +61,7 @@ export function TarotForm() {
         />
       </Field>
       <div>
-        <p className="mb-1.5 text-sm text-muted">
+        <p className="mb-3 text-xs tracking-[0.08em] text-muted">
           질문을 떠올리며 카드 세 장을 골라 주세요 ({picks.length}/3)
         </p>
         <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
@@ -73,22 +73,22 @@ export function TarotForm() {
                 type="button"
                 onClick={() => toggle(i)}
                 aria-label={`${i + 1}번째 카드`}
-                className={`relative aspect-[2/3] rounded-md border transition ${
+                className={`relative aspect-[2/3] border transition ${
                   order >= 0
-                    ? "-translate-y-1 border-gold bg-gold/20"
-                    : "border-line bg-[repeating-linear-gradient(45deg,#211d40,#211d40_6px,#2a2550_6px,#2a2550_12px)] hover:border-gold/50"
+                    ? "border-gold bg-gold/15"
+                    : "border-line-strong bg-[repeating-linear-gradient(135deg,#181818,#181818_5px,#202020_5px,#202020_10px)] hover:border-muted"
                 }`}
               >
-                {order >= 0 && <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gold-strong">{order + 1}</span>}
+                {order >= 0 && <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-gold">{order + 1}</span>}
               </button>
             );
           })}
         </div>
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-3 text-xs text-muted-soft">
           고른 순서대로 {positions.map((p, i) => `${i + 1} ${p}`).join(" · ")}
         </p>
       </div>
-      {error && <p className="text-sm text-fire">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
       <PrimaryButton type="button" onClick={submit} disabled={submitting || picks.length !== 3}>
         {submitting ? "카드를 펼치는 중…" : "카드 펼치기"}
       </PrimaryButton>

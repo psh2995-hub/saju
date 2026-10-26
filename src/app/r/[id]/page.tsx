@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "풀이 결과", robots: { index: fal
 
 export default function ReadingPage(props: PageProps<"/r/[id]">) {
   return (
-    <Suspense fallback={<p className="animate-pulse py-20 text-center text-muted">풀이를 불러오는 중…</p>}>
+    <Suspense fallback={<p className="animate-pulse py-24 text-center text-muted">풀이를 불러오는 중…</p>}>
       <Reading {...props} />
     </Suspense>
   );
@@ -29,7 +29,7 @@ async function Reading({ params, searchParams }: PageProps<"/r/[id]">) {
   if (!reading) notFound();
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-3xl space-y-px px-5 pt-14">
       {reading.kind === "saju" ? (
         <SajuChartView input={reading.input as unknown as SajuInput} chart={reading.chart as unknown as SajuChart} />
       ) : (

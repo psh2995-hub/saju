@@ -41,7 +41,7 @@ npm run dev
 
 - [ ] Vercel 환경 변수에 `SUPABASE_SECRET_KEY`, `ANTHROPIC_API_KEY` 입력
 - [ ] PG 심사 통과 후 포트원 스토어 ID·채널 키·API 시크릿·웹훅 시크릿 입력, 웹훅 URL 등록
-- [ ] 사업자 정보(`NEXT_PUBLIC_BIZ_*`) 입력, 상호명 확정 시 `NEXT_PUBLIC_SITE_NAME` 변경
+- [ ] 사업자 정보(`NEXT_PUBLIC_BIZ_*`) 입력
 - [ ] 약관·환불정책·개인정보처리방침 법률 검토
 - [ ] 1년 지난 풀이 자동 파기(개인정보처리방침에 명시) — Supabase pg_cron 등으로 구현 필요
 - [ ] `POST /api/readings` 요청 횟수 제한(봇 방지)

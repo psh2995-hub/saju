@@ -55,7 +55,7 @@ export function SajuForm() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5 rounded-2xl border border-line bg-surface p-6">
+    <form onSubmit={submit} className="space-y-6 bg-surface-1 p-6 sm:p-8">
       <Field label="이름 (선택)">
         <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} maxLength={20} placeholder="홍길동" />
       </Field>
@@ -72,8 +72,8 @@ export function SajuForm() {
           options={[{ value: "solar", label: "양력" }, { value: "lunar", label: "음력" }]}
         />
         {calendar === "lunar" && (
-          <label className="mt-2 flex items-center gap-2 text-sm text-muted">
-            <input type="checkbox" checked={leapMonth} onChange={(e) => setLeapMonth(e.target.checked)} /> 윤달
+          <label className="mt-3 flex items-center gap-2 text-sm text-muted">
+            <input type="checkbox" className="accent-gold" checked={leapMonth} onChange={(e) => setLeapMonth(e.target.checked)} /> 윤달
           </label>
         )}
       </Field>
@@ -99,20 +99,20 @@ export function SajuForm() {
             {range(0, 59).map((m) => <option key={m} value={m}>{m}분</option>)}
           </select>
         </div>
-        <label className="mt-2 flex items-center gap-2 text-sm text-muted">
-          <input type="checkbox" checked={timeUnknown} onChange={(e) => setTimeUnknown(e.target.checked)} /> 태어난 시간을 몰라요
+        <label className="mt-3 flex items-center gap-2 text-sm text-muted">
+          <input type="checkbox" className="accent-gold" checked={timeUnknown} onChange={(e) => setTimeUnknown(e.target.checked)} /> 태어난 시간을 몰라요
         </label>
         {!timeUnknown && (
           <label className="mt-1 flex items-start gap-2 text-sm text-muted">
-            <input type="checkbox" className="mt-1" checked={solarTimeCorrection} onChange={(e) => setSolarTimeCorrection(e.target.checked)} />
+            <input type="checkbox" className="mt-1 accent-gold" checked={solarTimeCorrection} onChange={(e) => setSolarTimeCorrection(e.target.checked)} />
             <span>
               한국 시간 보정 적용 (권장)
-              <span className="block text-xs">표준시와 실제 태양시의 차이(약 30분)와 과거 서머타임을 반영합니다.</span>
+              <span className="block text-xs text-muted-soft">표준시와 실제 태양시의 차이(약 30분)와 과거 서머타임을 반영합니다.</span>
             </span>
           </label>
         )}
       </Field>
-      {error && <p className="text-sm text-fire">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
       <PrimaryButton type="submit" disabled={submitting}>
         {submitting ? "명식을 세우는 중…" : "무료로 내 사주 보기"}
       </PrimaryButton>
