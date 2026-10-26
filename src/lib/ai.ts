@@ -1,10 +1,13 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { TEN_GOD_EN } from "./en";
 import type { GunghapChart, GunghapInput } from "./gunghap";
 import type { NewYearChart } from "./newyear";
 import type { SajuChart, SajuInput } from "./saju";
 import type { FollowupRow, ReadingRow } from "./supabase";
 import type { TarotChart, TarotInput } from "./tarot";
+import type { ZodiacChart, ZodiacInput } from "./zodiac";
+import { POINTS, signByKey } from "./zodiac-signs";
 
 const MODEL = "claude-opus-5-5";
 
@@ -17,6 +20,28 @@ const COMMON_RULES = `
 - 죽음, 큰 사고, 이혼 등을 단정적으로 예언하거나 공포를 조장하지 않습니다. 어려운 시기는 대비하는 방법과 함께 이야기합니다.
 - 부적, 굿, 추가 유료 상담 등 다른 상품 구매를 권하지 않습니다.
 - 마지막 문단은 오늘부터 실천할 수 있는 조언 한두 가지로 맺습니다.`;
+
+const COMMON_RULES_EN = `
+Writing guidelines:
+- Write entirely in natural, warm English, like a counselor sitting across from the reader. Be specific and personal.
+- Use Markdown: "## " for main sections and "### " for subsections when needed. No tables.
+- Ground every point in the given chart or cards, and explain the reasoning in plain words. Avoid empty platitudes.
+- The chart data is written in Korean. Translate it; never output Korean script. Chinese characters may appear only as the pillar characters shown in the data (e.g. 己卯).
+- When you mention a Korean concept, give the English name first and the romanized Korean term once in parentheses, e.g. Day Pillar (ilju), Ten-year Luck Cycle (daeun), Five Elements (oheng).
+- Name the Ten Gods exactly as the site does: ${Object.entries(TEN_GOD_EN)
+  .map(([ko, en]) => `${ko} = ${en}`)
+  .join(", ")}.
+- This reading is for entertainment and reflection. Don't make definitive calls on health, investments or legal matters; suggest a professional instead.
+- Never predict death, serious accidents or divorce, and don't use fear. Present hard periods together with ways to prepare.
+- Don't recommend talismans, rituals or other paid services.
+- End with one or two practical things the reader can start today.`;
+
+const SYSTEM_SAJU_EN =
+  "You are a Korean Saju (Four Pillars of Destiny) master with 30 years of experience who introduces Korean astrology to readers around the world. You explain Korean concepts simply and vividly, and when it helps, you briefly compare them with Western astrology the reader may know.";
+const SYSTEM_ZODIAC_EN =
+  "You are a warm, insightful astrologer with deep knowledge of Western tropical astrology, who also knows the Korean zodiac. You read a birth chart as a whole, explaining how the placements work together in plain, vivid language.";
+const SYSTEM_TAROT_EN =
+  "You are a warm, insightful tarot reader. You know the Rider-Waite deck's symbolism deeply and describe each card's imagery vividly as you interpret it.";
 
 const SYSTEM_SAJU = "당신은 30년 경력의 명리학 상담가입니다. 자평명리 이론에 밝고, 어려운 용어는 일상 언어로 풀어 설명합니다.";
 const SYSTEM_TAROT =
@@ -31,11 +56,28 @@ function describeChart(chart: SajuChart, input: SajuInput, title = "명식") {
   return `[${title}]
 이름: ${input.name || "(미입력)"} / 성별: ${input.gender === "M" ? "남성" : "여성"}
 양력 생일: ${chart.solarDate} / 음력: ${chart.lunarDate} / 띠: ${chart.zodiac}
-출생 시각: ${chart.usedTime ? `${chart.usedTime} (${chart.corrections.join(", ") || "보정 없음"})` : "모름 — 시주 없이 세 기둥으로 풀이"}
+출생 시각: ${chart.usedTime ? `${chart.usedTime} (${chart.corrections.join(", ") || "보정 없음"})` : "모름 — 시주 없이 세 기둥으로 풀이"}${input.timeZone ? `\n출생지 시간대: ${input.timeZone} (출생지 시계 기준으로 계산)` : ""}
 ${pillars}
 일간: ${chart.dayMaster.gan}(${chart.dayMaster.ko}) ${chart.dayMaster.element}
 오행 개수: ${elements}
 대운: ${daeun}`;
+}
+
+function describeZodiac(input: ZodiacInput, chart: ZodiacChart) {
+  const placements = chart.placements
+    .map((p) => {
+      const sign = signByKey(p.sign);
+      return `${POINTS[p.point].name} (${POINTS[p.point].meaning}): ${sign.name} ${p.degree}° — ${sign.element}, ${sign.modality}, ruled by ${sign.ruler}`;
+    })
+    .join("\n");
+  const time = input.hour === null ? "unknown (calculated for noon)" : `${input.hour}:${String(input.minute ?? 0).padStart(2, "0")}`;
+  return `Name: ${input.name || "(not given)"}
+Born: ${input.year}-${input.month}-${input.day}, time ${time}, ${chart.place ?? "birthplace not listed"} (${input.timeZone})
+[Placements]
+${placements}
+${chart.placements.some((p) => p.point === "rising") ? "" : "Rising sign: unknown (needs birth time and city)\n"}${chart.moonUncertain ? "Note: the Moon changed signs on this birthday, so the Moon sign is uncertain without a birth time.\n" : ""}Element balance: ${Object.entries(chart.elements).map(([k, v]) => `${k} ${v}`).join(", ")}
+Korean zodiac (by birth year, counted from Ipchun): ${chart.animal.ganZhi} ${chart.animal.name} — ${chart.animal.trait}
+Current sky (${chart.sky.date}): Jupiter in ${signByKey(chart.sky.jupiter).name}, Saturn in ${signByKey(chart.sky.saturn).name}`;
 }
 
 function describeTarot(input: TarotInput, chart: TarotChart) {
@@ -45,6 +87,14 @@ function describeTarot(input: TarotInput, chart: TarotChart) {
   return `주제: ${chart.topicLabel}
 질문: ${input.question || "(구체적인 질문 없이 주제 전반에 대해)"}
 [뽑힌 카드]
+${cards}`;
+}
+
+function describeTarotEn(input: TarotInput, chart: TarotChart) {
+  const cards = chart.cards.map((c, i) => `${i + 1}. [${c.position}] ${c.name} ${c.reversed ? "reversed" : "upright"} — ${c.meaning}`).join("\n");
+  return `Topic: ${chart.topicLabel}
+Question: ${input.question || "(no specific question; read the topic as a whole)"}
+[Cards drawn]
 ${cards}`;
 }
 
@@ -69,9 +119,82 @@ ${describeChart(chart.b, input.b, `${input.b.name || "둘째 사람"}의 명식`
 ${points}`;
 }
 
-type Request = { system: string; context: string; instructions: string };
+type Request = { system: string; context: string; instructions: string; rules: string };
 
 function requestFor(reading: ReadingRow): Request {
+  return reading.lang === "en" ? requestForEn(reading) : { ...requestForKo(reading), rules: COMMON_RULES };
+}
+
+function requestForEn(reading: ReadingRow): Request {
+  const input = reading.input as never;
+  const chart = reading.chart as never;
+  switch (reading.kind) {
+    case "zodiac": {
+      const c = chart as ZodiacChart;
+      const sun = signByKey(c.placements[0].sign);
+      return {
+        system: SYSTEM_ZODIAC_EN,
+        context: describeZodiac(input, c),
+        instructions: `Write an in-depth zodiac (Western astrology) reading for the birth chart above, in this order (about 1,300–1,800 words in total):
+## Your Big Three (the Sun in ${sun.name}, the Moon${c.placements.some((p) => p.point === "rising") ? " and your Rising sign" : "; mention briefly that the Rising sign needs a birth time and city"} — how they work together)
+## Love & Relationships (Venus, Mars and the Moon)
+## Work, Money & Talents (the Sun, Mercury and Mars)
+## Your Elements in Balance (what is strong, what is missing, and how to balance it)
+## The Year Ahead (read Jupiter and Saturn in the current sky against this chart; don't invent other transits or exact dates)
+## Your Korean Zodiac Twist (a short section on the ${c.animal.name} and what it adds)
+## Advice`,
+        rules: COMMON_RULES_EN,
+      };
+    }
+    case "tarot":
+      return {
+        system: SYSTEM_TAROT_EN,
+        context: describeTarotEn(input, chart),
+        instructions: `Write an in-depth tarot reading for the spread above, in this order (about 900–1,300 words in total):
+## The Cards (one ### subsection per card, tied to its position)
+## The Story the Three Cards Tell
+## The Answer to Your Question
+## Advice`,
+        rules: COMMON_RULES_EN,
+      };
+    case "newyear": {
+      const c = chart as NewYearChart;
+      return {
+        system: SYSTEM_SAJU_EN,
+        context: describeNewYear(input, c),
+        instructions: `Using the chart above and the ${c.year.year} yearly and monthly energies, write a ${c.year.year} K-Zodiac Forecast in this order (about 1,800–2,500 words in total):
+## Your ${c.year.year} at a Glance (what the year's energy means for the Day Master, and how it sits within the current Ten-year Luck Cycle)
+## Money
+## Career & Study
+## Love & Relationships
+## Health
+## Month by Month (from February through the following January, a ### subsection for each month with 2–4 sentences; Korean months start at the solar terms, so February begins at Ipchun around Feb 4)
+## Making the Most of ${c.year.year}`,
+        rules: COMMON_RULES_EN,
+      };
+    }
+    default: {
+      const c = chart as SajuChart;
+      return {
+        system: SYSTEM_SAJU_EN,
+        context: `${describeChart(c, input)}\n세운: 올해 ${c.thisYear.year}년 ${c.thisYear.ganZhi}(${c.thisYear.ko}), 내년 ${c.nextYear.year}년 ${c.nextYear.ganZhi}(${c.nextYear.ko})`,
+        instructions: `Write an in-depth Korean Birth Chart (Saju) reading for the chart above, in this order (about 2,000–2,800 words in total):
+## Your Core Nature (start from the Day Pillar)
+## Your Five Elements Balance and How to Support It
+## Wealth
+## Career & Talents
+## Love & Partnership
+## Health
+## Your Ten-year Luck Cycles (focus on the current one)
+## ${c.thisYear.year} and ${c.nextYear.year}
+## Final Advice`,
+        rules: COMMON_RULES_EN,
+      };
+    }
+  }
+}
+
+function requestForKo(reading: ReadingRow): Omit<Request, "rules"> {
   const input = reading.input as never;
   const chart = reading.chart as never;
   switch (reading.kind) {
@@ -93,6 +216,7 @@ function requestFor(reading: ReadingRow): Request {
       };
     }
     case "tarot":
+    case "zodiac":
       return {
         system: SYSTEM_TAROT,
         context: describeTarot(input, chart),
@@ -162,7 +286,7 @@ async function* streamText(system: string, user: string, maxTokens: number): Asy
 /** 결제 완료된 풀이의 AI 해석을 스트리밍한다. */
 export function streamReading(reading: ReadingRow) {
   const r = requestFor(reading);
-  return streamText(r.system, `${r.context}\n\n${r.instructions}\n${COMMON_RULES}`, 32000);
+  return streamText(r.system, `${r.context}\n\n${r.instructions}\n${r.rules}`, 32000);
 }
 
 /** 추가 질문에 대한 답을 스트리밍한다. 원래 풀이와 이전 질문·답을 함께 넘긴다. */
@@ -172,7 +296,22 @@ export function streamFollowup(reading: ReadingRow, previous: FollowupRow[], fol
     .filter((f) => f.ai_status === "done" && f.ai_result)
     .map((f) => `Q. ${f.question}\nA. ${f.ai_result}`)
     .join("\n\n");
-  const user = `${r.context}
+  const user =
+    reading.lang === "en"
+      ? `${r.context}
+
+[Reading already delivered]
+${reading.ai_result ?? "(none)"}
+${history ? `\n[Earlier follow-up questions and answers]\n${history}\n` : ""}
+[New question]
+${followup.question}
+
+Continuing from the chart (or cards) and the reading already delivered, answer only the new question.
+- About 400–700 words. Don't start with a "## " heading; go straight into the answer, using "### " subheadings if useful.
+- Stay consistent with the earlier reading and don't repeat it.
+- If the question can't be answered from the chart or cards (lottery numbers for a date, private details about other people, etc.), gently explain why and suggest a helpful direction.
+${r.rules}`
+      : `${r.context}
 
 [이미 전해 드린 풀이]
 ${reading.ai_result ?? "(없음)"}
@@ -184,6 +323,6 @@ ${followup.question}
 - 1,000~2,000자 내외. 맨 앞에 "## " 제목 없이 바로 답으로 시작하고, 필요하면 "### 소제목"을 씁니다.
 - 앞 풀이와 모순되지 않게 하고, 같은 내용을 반복하지 않습니다.
 - 질문이 명식·카드로 답할 수 없는 내용(특정 날짜의 복권 번호, 다른 사람의 사적인 정보 등)이면 그 이유를 부드럽게 설명하고 도움이 될 만한 방향을 제시합니다.
-${COMMON_RULES}`;
+${r.rules}`;
   return streamText(r.system, user, 16000);
 }

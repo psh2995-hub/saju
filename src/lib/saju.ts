@@ -16,6 +16,8 @@ export type SajuInput = {
   minute: number | null;
   /** 서울 경도 기준 진태양시 보정(약 -30분)과 과거 서머타임 보정을 적용할지 */
   solarTimeCorrection: boolean;
+  /** 해외 출생이면 출생지의 IANA 시간대(예: America/New_York). 없으면 한국 시간으로 본다. */
+  timeZone?: string;
 };
 
 export type Pillar = {
@@ -136,6 +138,38 @@ function koreaWallClockToUtc(s: Solar) {
   return Date.UTC(s.getYear(), s.getMonth() - 1, s.getDay(), s.getHour(), s.getMinute(), s.getSecond()) - (koreaStandardOffsetMinutes(ymd) + dst) * 60_000;
 }
 
+/** 그 시점에 해당 시간대의 UTC 오프셋(밀리초). 서머타임과 과거 시간대 변경은 Intl(ICU) 자료를 따른다. */
+function zoneOffsetMs(utc: number, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  }).formatToParts(utc);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second")) - utc;
+}
+
+/** 출생지 벽시계 시각을 UTC 밀리초로 바꾼다. */
+export function zonedWallClockToUtc(s: Solar, timeZone: string) {
+  const wall = Date.UTC(s.getYear(), s.getMonth() - 1, s.getDay(), s.getHour(), s.getMinute(), s.getSecond());
+  // 오프셋은 UTC 시점에 따라 달라지므로 한 번 더 맞춘다(서머타임 경계 근처).
+  return wall - zoneOffsetMs(wall - zoneOffsetMs(wall, timeZone), timeZone);
+}
+
+export function isValidTimeZone(timeZone: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** lunar-javascript는 절기 시각을 베이징 시간(UTC+8)으로 계산한다. */
 const LIB_OFFSET_MS = 8 * 3600_000;
 const libSolarFromUtc = (utc: number) => {
@@ -194,6 +228,11 @@ export function validateSajuInput(raw: unknown): SajuInput {
     minute: r.minute == null ? null : int(r.minute),
     solarTimeCorrection: r.solarTimeCorrection !== false,
   };
+  // 한국(Asia/Seoul)은 기존 한국 시간 계산(서머타임·경도 보정 포함)을 그대로 쓴다.
+  if (typeof r.timeZone === "string" && r.timeZone && r.timeZone !== "Asia/Seoul") {
+    if (r.timeZone.length > 64 || !isValidTimeZone(r.timeZone)) throw new Error("출생지 시간대가 올바르지 않습니다.");
+    input.timeZone = r.timeZone;
+  }
   if (!(input.year >= 1920 && input.year <= 2030)) throw new Error("출생 연도는 1920~2030년 사이여야 합니다.");
   if (!(input.month >= 1 && input.month <= 12)) throw new Error("월이 올바르지 않습니다.");
   if (!(input.day >= 1 && input.day <= 31)) throw new Error("일이 올바르지 않습니다.");
@@ -227,10 +266,11 @@ export function calculateSaju(input: SajuInput, now = new Date()): SajuChart {
   }
   const solarDate = solar.toYmd();
   // 절기(연·월 경계)와 대운수는 실제 시점(UTC)으로 비교해야 하므로 보정 전 벽시계 시각을 UTC로 바꿔 둔다.
-  const birthUtc = koreaWallClockToUtc(solar);
+  const birthUtc = input.timeZone ? zonedWallClockToUtc(solar, input.timeZone) : koreaWallClockToUtc(solar);
 
+  // 해외 출생은 출생지 시계를 그대로 쓴다(한국 경도·서머타임 보정은 한국 출생에만 해당).
   const corrections: string[] = [];
-  if (timeKnown && input.solarTimeCorrection) {
+  if (timeKnown && input.solarTimeCorrection && !input.timeZone) {
     const ymd = solar.toYmd();
     if (KOREA_DST.some(([s, e]) => ymd >= s && ymd < e)) {
       solar = shiftMinutes(solar, -60);

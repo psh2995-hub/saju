@@ -1,11 +1,13 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
+import type { Lang } from "./i18n";
 import type { ReadingKind } from "./products";
 
 export type ReadingRow = {
   id: string;
   kind: ReadingKind;
+  lang: Lang;
   input: Record<string, unknown>;
   chart: Record<string, unknown>;
   price: number;

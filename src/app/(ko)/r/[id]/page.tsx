@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { GunghapView } from "@/components/GunghapView";
 import { NewYearView } from "@/components/NewYearView";
@@ -7,6 +7,7 @@ import { ReadingActions } from "@/components/ReadingActions";
 import { SajuChartView } from "@/components/SajuChartView";
 import { ShareBar } from "@/components/ShareBar";
 import { TarotView } from "@/components/TarotView";
+import { ZodiacView } from "@/components/en/ZodiacView";
 import type { GunghapChart, GunghapInput } from "@/lib/gunghap";
 import type { NewYearChart } from "@/lib/newyear";
 import { mockPaymentAllowed } from "@/lib/payments";
@@ -14,6 +15,7 @@ import { PRODUCTS } from "@/lib/products";
 import type { SajuChart, SajuInput } from "@/lib/saju";
 import { getFollowups, getReading, type ReadingRow } from "@/lib/supabase";
 import type { TarotChart, TarotInput } from "@/lib/tarot";
+import type { ZodiacChart, ZodiacInput } from "@/lib/zodiac";
 
 export const metadata: Metadata = { title: "풀이 결과", robots: { index: false } };
 
@@ -30,6 +32,7 @@ const DESCRIPTION: Record<ReadingRow["kind"], string> = {
   newyear: "한 해의 총운과 재물·직업·연애·건강, 그리고 달마다의 흐름을 월별로 자세히 풀어 드립니다.",
   gunghap: "두 사람의 명식을 함께 놓고 끌림, 대화 방식, 부딪히는 지점과 푸는 법, 앞으로의 흐름까지 풀어 드립니다.",
   tarot: "뽑은 세 장의 카드를 질문에 맞춰 하나의 이야기로 엮어 심층 해석해 드립니다.",
+  zodiac: "태양·달·상승궁과 개인 행성으로 성격, 연애, 일과 돈, 앞으로 1년의 흐름을 풀어 드립니다.",
 };
 
 function productName(reading: ReadingRow) {
@@ -48,6 +51,8 @@ function ChartView({ reading }: { reading: ReadingRow }) {
       return <GunghapView input={input as GunghapInput} chart={reading.chart as unknown as GunghapChart} />;
     case "tarot":
       return <TarotView input={input as TarotInput} chart={reading.chart as unknown as TarotChart} />;
+    case "zodiac":
+      return <ZodiacView input={input as ZodiacInput} chart={reading.chart as unknown as ZodiacChart} />;
   }
 }
 
@@ -58,6 +63,11 @@ async function Reading({ params, searchParams }: PageProps<"/r/[id]">) {
   const paymentId = one(query.paymentId);
   const reading = await getReading(id);
   if (!reading) notFound();
+  // 해외(영문) 페이지에서 만든 풀이는 영문 결과 페이지에서 연다.
+  if (reading.lang === "en") {
+    const qs = new URLSearchParams(Object.entries(query).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : []))).toString();
+    redirect(`/en/r/${id}${qs ? `?${qs}` : ""}`);
+  }
   const followups = reading.status === "paid" ? await getFollowups(reading.id) : [];
 
   return (
