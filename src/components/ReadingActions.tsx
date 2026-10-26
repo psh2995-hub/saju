@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Lang } from "@/lib/i18n";
+import type { Currency, Lang } from "@/lib/i18n";
 import type { FollowupRow } from "@/lib/supabase";
 import { Followups } from "./Followups";
 import { Unlock, type UnlockTarget } from "./Unlock";
@@ -13,6 +13,7 @@ export function ReadingActions(props: {
   readingId: string;
   productName: string;
   price: number;
+  currency: Currency;
   status: "unpaid" | "paid" | "refunded";
   result: string | null;
   followups: FollowupRow[];
@@ -30,6 +31,7 @@ export function ReadingActions(props: {
         target={target}
         productName={props.productName}
         price={props.price}
+        currency={props.currency}
         initialStatus={props.status}
         initialResult={props.result}
         mockPayment={props.mockPayment}
@@ -41,6 +43,7 @@ export function ReadingActions(props: {
       {done && (
         <Followups
           readingId={props.readingId}
+          currency={props.currency}
           initial={props.followups}
           mockPayment={props.mockPayment}
           paymentRedirect={redirect?.followupId ? { ...redirect, followupId: redirect.followupId } : null}

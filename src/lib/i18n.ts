@@ -3,6 +3,13 @@ export type Lang = "ko" | "en";
 
 export const isLang = (v: unknown): v is Lang => v === "ko" || v === "en";
 
+/** 결제 통화. 금액은 KRW는 원, USD는 센트 단위로 저장한다(포트원 totalAmount 규칙과 같다). */
+export type Currency = "KRW" | "USD";
+
+/** 토스페이먼츠 달러 채널(해외카드)이 설정되면 영문 페이지 결제를 달러로 받는다. */
+export const USD_CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY_USD;
+export const usdPaymentsEnabled = () => !!USD_CHANNEL_KEY;
+
 /** 언어 선택을 기억하는 쿠키. proxy.ts가 첫 화면(/)에서 읽는다. */
 export const LANG_COOKIE = "lang";
 
@@ -16,8 +23,9 @@ export function readingPath(id: string, lang: Lang) {
 /** 영문 화면에서 원화 가격을 달러로 보여 줄 때 쓰는 환율. 표시용이며 실제 결제는 원화로 한다. */
 const KRW_PER_USD = 1400;
 
-/** 영문은 달러로 바꿔 정수로 반올림한다(4,900원 → $3.5 → $4). */
-export function formatPrice(n: number, lang: Lang) {
+/** 영문은 달러로 보여 준다. 원화 결제라면 달러로 바꿔 정수로 반올림한다(4,900원 → $3.5 → $4). */
+export function formatPrice(n: number, lang: Lang, currency: Currency = "KRW") {
+  if (currency === "USD") return `$${Number.isInteger(n / 100) ? n / 100 : (n / 100).toFixed(2)}`;
   if (lang === "ko") return `${n.toLocaleString("ko-KR")}원`;
   return `$${Math.round(n / KRW_PER_USD)}`;
 }

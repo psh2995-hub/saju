@@ -78,6 +78,7 @@ async function Reading({ params, searchParams }: PageProps<"/r/[id]">) {
         readingId={reading.id}
         productName={productName(reading)}
         price={reading.price}
+        currency={reading.currency}
         status={reading.status}
         result={reading.ai_status === "done" ? reading.ai_result : null}
         followups={followups}

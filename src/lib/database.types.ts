@@ -21,6 +21,7 @@ export type Database = {
           ai_started_at: string | null;
           ai_status: string;
           created_at: string;
+          currency: string;
           id: string;
           paid_at: string | null;
           payment_id: string | null;
@@ -34,6 +35,7 @@ export type Database = {
           ai_started_at?: string | null;
           ai_status?: string;
           created_at?: string;
+          currency?: string;
           id?: string;
           paid_at?: string | null;
           payment_id?: string | null;
@@ -76,6 +78,7 @@ export type Database = {
           ai_status: string;
           chart: Json;
           created_at: string;
+          currency: string;
           id: string;
           input: Json;
           kind: string;
@@ -92,6 +95,7 @@ export type Database = {
           ai_status?: string;
           chart: Json;
           created_at?: string;
+          currency?: string;
           id?: string;
           input: Json;
           kind: string;

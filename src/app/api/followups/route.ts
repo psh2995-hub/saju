@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FOLLOWUP } from "@/lib/products";
+import { followupPriceFor } from "@/lib/products";
 import { db, getFollowups, getReading } from "@/lib/supabase";
 
 /** 결제·풀이가 끝난 풀이에 추가 질문을 등록한다(결제 전 상태). */
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   }
   const { data, error } = await db()
     .from("followups")
-    .insert({ reading_id: readingId, question: q, price: FOLLOWUP.price })
+    .insert({ reading_id: readingId, question: q, price: followupPriceFor(reading.currency), currency: reading.currency })
     .select("*")
     .single();
   if (error) throw error;

@@ -5,14 +5,16 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Eyebrow, PrimaryButton } from "./ui";
-import { formatPrice, readingPath, UI_TEXT, type Lang } from "@/lib/i18n";
+import { formatPrice, readingPath, UI_TEXT, USD_CHANNEL_KEY, type Currency, type Lang } from "@/lib/i18n";
 
 export type UnlockTarget = { type: "reading" | "followup"; id: string; readingId: string };
 
 type Props = {
   target: UnlockTarget;
   productName: string;
+  /** KRW는 원, USD는 센트 */
   price: number;
+  currency?: Currency;
   initialStatus: "unpaid" | "paid" | "refunded";
   initialResult: string | null;
   mockPayment: boolean;
@@ -32,7 +34,7 @@ type Phase = "unpaid" | "paying" | "generating" | "done" | "failed" | "refunded"
 const STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
 const CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY;
 
-export function Unlock({ target, productName, price, initialStatus, initialResult, mockPayment, paymentRedirect, description, compact, onDone, lang = "ko" }: Props) {
+export function Unlock({ target, productName, price, currency = "KRW", initialStatus, initialResult, mockPayment, paymentRedirect, description, compact, onDone, lang = "ko" }: Props) {
   const t = UI_TEXT[lang];
   const generateUrl = target.type === "reading" ? `/api/readings/${target.id}/generate` : `/api/followups/${target.id}/generate`;
   const customData = target.type === "reading" ? { readingId: target.id } : { followupId: target.id };
@@ -144,7 +146,8 @@ export function Unlock({ target, productName, price, initialStatus, initialResul
       beginGeneration();
       return;
     }
-    if (!STORE_ID || !CHANNEL_KEY) {
+    const channelKey = currency === "USD" ? USD_CHANNEL_KEY : CHANNEL_KEY;
+    if (!STORE_ID || !channelKey) {
       setError(t.paymentNotReady);
       return;
     }
@@ -153,11 +156,13 @@ export function Unlock({ target, productName, price, initialStatus, initialResul
     const paymentId = `${target.type === "reading" ? "r" : "f"}-${target.id.replaceAll("-", "")}-${Date.now().toString(36)}`;
     const response = await PortOne.requestPayment({
       storeId: STORE_ID,
-      channelKey: CHANNEL_KEY,
+      channelKey,
       paymentId,
       orderName: productName,
       totalAmount: price,
-      currency: "CURRENCY_KRW",
+      currency: currency === "USD" ? "CURRENCY_USD" : "CURRENCY_KRW",
+      // 토스페이먼츠 달러 결제는 해외 발급 카드로만 받는다.
+      ...(currency === "USD" ? { bypass: { tosspayments: { useInternationalCardOnly: true } } } : {}),
       payMethod: "CARD",
       productType: "PRODUCT_TYPE_DIGITAL",
       customData,
@@ -182,7 +187,7 @@ export function Unlock({ target, productName, price, initialStatus, initialResul
         {!compact && <Eyebrow>FULL READING</Eyebrow>}
         <div className={`${compact ? "" : "mt-3 "}flex flex-wrap items-baseline justify-between gap-2`}>
           <h2 className={compact ? "text-base text-ink" : "text-2xl text-ink"}>{productName}</h2>
-          <p className={compact ? "text-base text-ink" : "text-2xl text-ink"}>{formatPrice(price, lang)}</p>
+          <p className={compact ? "text-base text-ink" : "text-2xl text-ink"}>{formatPrice(price, lang, currency)}</p>
         </div>
         {description && <div className="mt-3 text-[15px] leading-7 text-muted">{description}</div>}
         <label className={`${compact ? "mt-4" : "mt-6"} flex items-start gap-2 border-t border-line pt-5 text-xs leading-5 text-muted`}>
@@ -197,7 +202,7 @@ export function Unlock({ target, productName, price, initialStatus, initialResul
         </label>
         {error && <p className="mt-3 text-sm text-error">{error}</p>}
         <PrimaryButton className={compact ? "mt-4 h-12" : "mt-5"} onClick={pay} disabled={!agreed || phase === "paying"}>
-          {phase === "paying" ? t.checkingPayment : t.payButton(formatPrice(price, lang), target.type === "followup")}
+          {phase === "paying" ? t.checkingPayment : t.payButton(formatPrice(price, lang, currency), target.type === "followup")}
         </PrimaryButton>
         {mockPayment && !STORE_ID && <p className="mt-3 text-center text-xs text-error">{t.mockNotice}</p>}
       </section>

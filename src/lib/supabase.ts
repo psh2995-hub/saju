@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
-import type { Lang } from "./i18n";
+import type { Currency, Lang } from "./i18n";
 import type { ReadingKind } from "./products";
 
 export type ReadingRow = {
@@ -10,7 +10,9 @@ export type ReadingRow = {
   lang: Lang;
   input: Record<string, unknown>;
   chart: Record<string, unknown>;
+  /** KRW는 원, USD는 센트 단위 */
   price: number;
+  currency: Currency;
   status: "unpaid" | "paid" | "refunded";
   payment_id: string | null;
   paid_at: string | null;
@@ -26,6 +28,7 @@ export type FollowupRow = {
   reading_id: string;
   question: string;
   price: number;
+  currency: Currency;
   status: "unpaid" | "paid" | "refunded";
   payment_id: string | null;
   paid_at: string | null;
