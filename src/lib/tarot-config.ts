@@ -10,3 +10,11 @@ export type TarotTopic = keyof typeof TAROT_TOPICS;
 
 /** 화면에 깔아 두는 뒷면 카드 수. 사용자는 이 중 3장을 고른다. */
 export const SPREAD_SIZE = 24;
+
+/** 별자리 타로(영문)의 질문 주제와 카드 자리 */
+export const ZODIAC_TAROT_TOPICS = {
+  love: { label: "Love & Relationships", positions: ["Your heart", "Their heart", "Where it's going"] },
+  money: { label: "Money", positions: ["Where you stand", "What's in the way", "What to do"] },
+  career: { label: "Career & Study", positions: ["Where you stand", "What's in the way", "What to do"] },
+  general: { label: "Life in General", positions: ["Past", "Present", "Future"] },
+} as const satisfies Record<TarotTopic, { label: string; positions: readonly string[] }>;

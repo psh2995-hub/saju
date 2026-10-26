@@ -4,6 +4,8 @@ import { TEN_GOD_YEAR, type NewYearChart } from "./newyear";
 import type { Element, SajuChart } from "./saju";
 import type { ReadingRow } from "./supabase";
 import type { TarotChart } from "./tarot";
+import type { ZodiacTarotChart } from "./zodiac";
+import { SIGNS } from "./zodiac-signs";
 
 export type SharePillar = { label: string; gan: string; zhi: string; ganElement: Element; zhiElement: Element };
 
@@ -81,6 +83,19 @@ export function shareSummary(reading: ReadingRow): ShareSummary {
         body: c.cards.map((card) => `${card.position}: ${card.meaning}`).join(" / "),
         cards: c.cards.map((card) => ({ name: card.name, nameEn: card.nameEn, reversed: card.reversed, position: card.position })),
         cta: { label: "나도 타로 카드 뽑기", href: "/tarot" },
+      };
+    }
+    case "zodiac": {
+      // 별자리 타로는 영문 전용 상품이다.
+      const c = reading.chart as unknown as ZodiacTarotChart;
+      const sign = SIGNS.find((s) => s.key === c.sign)!;
+      return {
+        eyebrow: `${sign.symbol} ${sign.name} · Zodiac Tarot`,
+        hanja: c.animal.ganZhi,
+        headline: `${sign.name} × ${c.animal.name}`,
+        body: c.cards.map((card) => `${card.position}: ${card.name}`).join(" / "),
+        cards: c.cards.map((card) => ({ name: card.name, nameEn: card.nameEn, reversed: card.reversed, position: card.position })),
+        cta: { label: "Draw your zodiac tarot", href: "/en/zodiac-tarot" },
       };
     }
   }

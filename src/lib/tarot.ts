@@ -35,24 +35,27 @@ export function validateTarotInput(raw: unknown): TarotInput {
 }
 
 /** 서버에서 암호학적 난수로 덱을 섞고, 사용자가 고른 자리의 카드를 펼친다(각 50% 확률로 역방향). */
-export function drawTarot(input: TarotInput): TarotChart {
-  const topic = TAROT_TOPICS[input.topic];
+export function drawCards(picks: number[], positions: readonly string[], lang: "ko" | "en" = "ko"): DrawnCard[] {
   const deck = [...TAROT_CARDS];
   for (let i = deck.length - 1; i > 0; i--) {
     const j = randomInt(i + 1);
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
-  const cards = topic.positions.map((position, i) => {
-    const card = deck[input.picks[i]];
+  return positions.map((position, i) => {
+    const card = deck[picks[i]];
     const reversed = randomInt(2) === 1;
     return {
       position,
       cardId: card.id,
-      name: card.name,
+      name: lang === "en" ? card.nameEn : card.name,
       nameEn: card.nameEn,
       reversed,
-      meaning: reversed ? card.reversed : card.upright,
+      meaning: lang === "en" ? (reversed ? card.reversedEn : card.uprightEn) : reversed ? card.reversed : card.upright,
     };
   });
-  return { topicLabel: topic.label, cards };
+}
+
+export function drawTarot(input: TarotInput): TarotChart {
+  const topic = TAROT_TOPICS[input.topic];
+  return { topicLabel: topic.label, cards: drawCards(input.picks, topic.positions) };
 }

@@ -1,32 +1,10 @@
 import type { Metadata } from "next";
-import { Noto_Serif_KR } from "next/font/google";
-import localFont from "next/font/local";
 import Link from "next/link";
 import { Mark } from "@/components/ui";
 import { siteUrl } from "@/lib/share";
 import { BUSINESS, PENDING, SITE_NAME } from "@/lib/site";
-import "./globals.css";
-
-// 본문 글꼴: 나눔스퀘어(SIL OFL 1.1, NAVER). 원본에서 빈 글리프(한자, KS X 1001 밖의 한글)를 빼서 그 글자는 다음 글꼴로 표시된다.
-// 한 굵기당 약 170KB라 미리 받지 않고 쓰이는 굵기만 내려받게 한다.
-const nanumSquare = localFont({
-  variable: "--font-nanum-square",
-  src: [
-    { path: "../fonts/NanumSquareL.woff2", weight: "300", style: "normal" },
-    { path: "../fonts/NanumSquareR.woff2", weight: "400", style: "normal" },
-    { path: "../fonts/NanumSquareB.woff2", weight: "700", style: "normal" },
-    { path: "../fonts/NanumSquareEB.woff2", weight: "800", style: "normal" },
-  ],
-  display: "swap",
-  preload: false,
-});
-
-// 명식의 한자 글자에만 쓴다.
-const hanja = Noto_Serif_KR({
-  variable: "--font-noto-serif-kr",
-  weight: ["400", "700"],
-  preload: false,
-});
+import { fontVariables } from "../fonts";
+import "../globals.css";
 
 const NAV = [
   ["/saju", "사주"],
@@ -39,11 +17,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: { default: `${SITE_NAME} — 사주·타로`, template: `%s | ${SITE_NAME}` },
   description: "타고난 시간을 읽고 가야 할 길을 비추는 사주·타로 풀이",
+  alternates: { languages: { ko: "/", en: "/en" } },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${nanumSquare.variable} ${hanja.variable} h-full antialiased`}>
+    <html lang="ko" className={`${fontVariables} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <header className="sticky top-0 z-10 bg-canvas/85 backdrop-blur">
           <nav className="mx-auto flex max-w-5xl flex-col px-5 sm:h-16 sm:flex-row sm:items-center sm:justify-between">
@@ -57,6 +36,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   {label}
                 </Link>
               ))}
+              <a href="/en?lang=en" className="border-l border-line-strong pl-5 hover:text-ink">
+                EN
+              </a>
             </div>
           </nav>
         </header>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatPrice, UI_TEXT, type Lang } from "@/lib/i18n";
 import { FOLLOWUP } from "@/lib/products";
 import type { FollowupRow } from "@/lib/supabase";
 import { Unlock } from "./Unlock";
@@ -14,12 +15,15 @@ export function Followups({
   initial,
   mockPayment,
   paymentRedirect,
+  lang = "ko",
 }: {
   readingId: string;
   initial: FollowupRow[];
   mockPayment: boolean;
   paymentRedirect: Redirect;
+  lang?: Lang;
 }) {
+  const t = UI_TEXT[lang];
   const [items, setItems] = useState(initial);
   const [question, setQuestion] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +42,7 @@ export function Followups({
     const data = await res.json().catch(() => ({}));
     setSubmitting(false);
     if (!res.ok) {
-      setError(data.error ?? "잠시 후 다시 시도해 주세요.");
+      setError(lang === "en" ? t.fallbackError : (data.error ?? t.fallbackError));
       return;
     }
     setItems((list) => [...list.filter((f) => f.id !== data.id), data]);
@@ -48,10 +52,8 @@ export function Followups({
   return (
     <section className="bg-surface-1 p-6 sm:p-8">
       <Eyebrow>MORE QUESTIONS</Eyebrow>
-      <h2 className="mt-3 text-xl text-ink">더 궁금한 것이 있나요?</h2>
-      <p className="mt-2 text-sm leading-6 text-muted">
-        위 풀이를 바탕으로 한 가지를 더 깊이 물어볼 수 있습니다. 질문 1회 {FOLLOWUP.price.toLocaleString("ko-KR")}원.
-      </p>
+      <h2 className="mt-3 text-xl text-ink">{t.followupTitle}</h2>
+      <p className="mt-2 text-sm leading-6 text-muted">{t.followupText(formatPrice(FOLLOWUP.price, lang))}</p>
 
       <div className="mt-6 space-y-px">
         {items.map((f) => (
@@ -63,12 +65,13 @@ export function Followups({
             <Unlock
               compact
               target={{ type: "followup", id: f.id, readingId }}
-              productName={FOLLOWUP.name}
+              productName={t.followupName}
               price={f.price}
               initialStatus={f.status}
               initialResult={f.ai_status === "done" ? f.ai_result : null}
               mockPayment={mockPayment}
               paymentRedirect={paymentRedirect?.followupId === f.id ? paymentRedirect : null}
+              lang={lang}
             />
           </div>
         ))}
@@ -81,7 +84,7 @@ export function Followups({
             value={question}
             maxLength={300}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="예) 그럼 이직은 언제쯤이 좋을까요?"
+            placeholder={t.followupPlaceholder}
           />
           {error && <p className="mt-2 text-sm text-error">{error}</p>}
           <button
@@ -89,7 +92,7 @@ export function Followups({
             className="mt-3 h-12 w-full border border-gold text-gold transition hover:bg-gold hover:text-black disabled:cursor-not-allowed disabled:border-line-strong disabled:text-muted-soft disabled:hover:bg-transparent"
             disabled={submitting || !question.trim()}
           >
-            {submitting ? "등록 중…" : "질문 등록하기"}
+            {submitting ? t.followupSubmitting : t.followupSubmit}
           </button>
         </form>
       )}
