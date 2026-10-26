@@ -23,6 +23,10 @@ Next.js 16(App Router) + Supabase + 포트원 V2 + Claude API로 만든 사주·
 | `src/lib/site.ts` | 상호명·사업자 정보(환경 변수) |
 | `supabase/migrations/` | DB 스키마 (RLS 켜짐, 정책 없음 → 서버 secret key로만 접근) |
 
+## 타로 카드 이미지
+
+`public/tarot/*.webp`는 1909년 라이더-웨이트-스미스 덱(그림: 패멀라 콜먼 스미스, 1951년 사망) 스캔으로, 저작권 보호기간이 끝난 공개 도메인 이미지입니다. 스캔은 [metabismuth/tarot-json](https://github.com/metabismuth/tarot-json)(출처 data.totl.net)에서 받아 WebP로 변환했습니다. 1971년 이후 U.S. Games Systems가 다시 채색한 판은 별도 저작권이 있으니 섞어 쓰지 마세요.
+
 ## 로컬 실행
 
 ```bash
