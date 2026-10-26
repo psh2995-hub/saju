@@ -45,6 +45,21 @@ body {
   word-break: keep-all;
 }
 
+.reading h1 {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--gold-strong);
+  margin-bottom: 1.25rem;
+}
+.reading hr {
+  border-color: var(--border);
+  margin: 1.75rem 0;
+}
+.reading em {
+  color: var(--muted);
+}
 .reading h2 {
   font-family: var(--font-serif);
   font-size: 1.35rem;
