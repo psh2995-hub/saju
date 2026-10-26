@@ -73,4 +73,27 @@ export const PLACES: Place[] = [
   p("Auckland", "Pacific/Auckland", -36.85, 174.76),
 ];
 
-export const placeById = (id: unknown) => PLACES.find((x) => x.id === id);
+/** 한국어 별자리 입력에 쓰는 국내 도시(모두 Asia/Seoul) */
+export const KOREA_PLACES: Place[] = (
+  [
+    ["seoul", "서울", 37.57, 126.98],
+    ["busan", "부산", 35.18, 129.08],
+    ["incheon", "인천", 37.46, 126.71],
+    ["daegu", "대구", 35.87, 128.6],
+    ["daejeon", "대전", 36.35, 127.38],
+    ["gwangju", "광주", 35.16, 126.85],
+    ["ulsan", "울산", 35.54, 129.31],
+    ["sejong", "세종", 36.48, 127.29],
+    ["suwon", "수원", 37.26, 127.03],
+    ["chuncheon", "춘천", 37.88, 127.73],
+    ["gangneung", "강릉", 37.75, 128.88],
+    ["cheongju", "청주", 36.64, 127.49],
+    ["jeonju", "전주", 35.82, 127.15],
+    ["pohang", "포항", 36.02, 129.34],
+    ["changwon", "창원", 35.23, 128.68],
+    ["mokpo", "목포", 34.81, 126.39],
+    ["jeju", "제주", 33.5, 126.53],
+  ] as const
+).map(([id, label, lat, lon]) => ({ id: `kr-${id}`, label, timeZone: "Asia/Seoul", lat, lon }));
+
+export const placeById = (id: unknown) => PLACES.find((x) => x.id === id) ?? KOREA_PLACES.find((x) => x.id === id);

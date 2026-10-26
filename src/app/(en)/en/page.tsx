@@ -84,7 +84,7 @@ export default function EnglishHome() {
               return (
                 <div key={point} className="bg-surface-2 px-2 py-5">
                   <p className="text-xs text-gold">{point}</p>
-                  <p className="mt-2 text-3xl text-ink">{s.symbol}</p>
+                  <p className="mt-2 font-[family-name:var(--font-symbol)] text-3xl text-ink">{s.symbol}</p>
                   <p className="mt-1 text-sm text-ink">{s.name}</p>
                 </div>
               );

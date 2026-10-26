@@ -11,12 +11,13 @@ const NAV = [
   ["/gunghap", "궁합"],
   ["/newyear", "신년운세"],
   ["/tarot", "타로"],
+  ["/zodiac", "별자리"],
 ] as const;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: `${SITE_NAME} — 사주·타로`, template: `%s | ${SITE_NAME}` },
-  description: "타고난 시간을 읽고 가야 할 길을 비추는 사주·타로 풀이",
+  title: { default: `${SITE_NAME} — 사주·타로·별자리`, template: `%s | ${SITE_NAME}` },
+  description: "타고난 시간을 읽고 가야 할 길을 비추는 사주·타로·별자리 풀이",
   alternates: { languages: { ko: "/", en: "/en" } },
 };
 

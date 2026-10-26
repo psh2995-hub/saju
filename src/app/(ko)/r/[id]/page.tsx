@@ -7,7 +7,7 @@ import { ReadingActions } from "@/components/ReadingActions";
 import { SajuChartView } from "@/components/SajuChartView";
 import { ShareBar } from "@/components/ShareBar";
 import { TarotView } from "@/components/TarotView";
-import { ZodiacView } from "@/components/en/ZodiacView";
+import { ZodiacView } from "@/components/ZodiacView";
 import type { GunghapChart, GunghapInput } from "@/lib/gunghap";
 import type { NewYearChart } from "@/lib/newyear";
 import { mockPaymentAllowed } from "@/lib/payments";
@@ -52,7 +52,7 @@ function ChartView({ reading }: { reading: ReadingRow }) {
     case "tarot":
       return <TarotView input={input as TarotInput} chart={reading.chart as unknown as TarotChart} />;
     case "zodiac":
-      return <ZodiacView input={input as ZodiacInput} chart={reading.chart as unknown as ZodiacChart} />;
+      return <ZodiacView input={input as ZodiacInput} chart={reading.chart as unknown as ZodiacChart} lang="ko" />;
   }
 }
 

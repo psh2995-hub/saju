@@ -7,7 +7,7 @@ import type { SajuChart, SajuInput } from "./saju";
 import type { FollowupRow, ReadingRow } from "./supabase";
 import type { TarotChart, TarotInput } from "./tarot";
 import type { ZodiacChart, ZodiacInput } from "./zodiac";
-import { POINTS, signByKey } from "./zodiac-signs";
+import { POINTS, POINTS_KO, SIGN_KO, signByKey } from "./zodiac-signs";
 
 const MODEL = "claude-opus-5-5";
 
@@ -43,6 +43,8 @@ const SYSTEM_ZODIAC_EN =
 const SYSTEM_TAROT_EN =
   "You are a warm, insightful tarot reader. You know the Rider-Waite deck's symbolism deeply and describe each card's imagery vividly as you interpret it.";
 
+const SYSTEM_ZODIAC =
+  "당신은 서양 점성술(트로피컬)에 밝은 따뜻한 점성가입니다. 출생 차트를 하나의 이야기로 읽고, 행성들이 어떻게 함께 작용하는지 쉬운 말로 생생하게 설명합니다.";
 const SYSTEM_SAJU = "당신은 30년 경력의 명리학 상담가입니다. 자평명리 이론에 밝고, 어려운 용어는 일상 언어로 풀어 설명합니다.";
 const SYSTEM_TAROT =
   "당신은 따뜻하고 통찰력 있는 타로 리더입니다. 라이더-웨이트 덱의 상징에 밝고, 카드의 이미지를 생생하게 묘사하며 해석합니다.";
@@ -63,11 +65,13 @@ ${pillars}
 대운: ${daeun}`;
 }
 
-function describeZodiac(input: ZodiacInput, chart: ZodiacChart) {
+/** 별자리 명식. 한국어 풀이에는 별자리·행성의 한국어 이름을 함께 넣어 용어를 맞춘다. */
+function describeZodiac(input: ZodiacInput, chart: ZodiacChart, withKorean = false) {
   const placements = chart.placements
     .map((p) => {
       const sign = signByKey(p.sign);
-      return `${POINTS[p.point].name} (${POINTS[p.point].meaning}): ${sign.name} ${p.degree}° — ${sign.element}, ${sign.modality}, ruled by ${sign.ruler}`;
+      const ko = withKorean ? ` [${POINTS_KO[p.point].name} ${SIGN_KO[p.sign].name}]` : "";
+      return `${POINTS[p.point].name} (${POINTS[p.point].meaning}): ${sign.name} ${p.degree}° — ${sign.element}, ${sign.modality}, ruled by ${sign.ruler}${ko}`;
     })
     .join("\n");
   const time = input.hour === null ? "unknown (calculated for noon)" : `${input.hour}:${String(input.minute ?? 0).padStart(2, "0")}`;
@@ -215,8 +219,23 @@ function requestForKo(reading: ReadingRow): Omit<Request, "rules"> {
 ## 마무리 조언`,
       };
     }
+    case "zodiac": {
+      const c = chart as ZodiacChart;
+      const hasRising = c.placements.some((p) => p.point === "rising");
+      return {
+        system: SYSTEM_ZODIAC,
+        context: describeZodiac(input, c, true),
+        instructions: `위 출생 차트로 별자리(서양 점성술) 풀이를 작성해 주세요. 별자리·행성 이름은 대괄호 안의 한국어 이름(예: 사자자리, 상승궁)을 씁니다. 다음 순서로 씁니다(전체 4,000~5,500자 내외):
+## 나의 빅3: 태양 ${SIGN_KO[c.placements[0].sign].name}${hasRising ? ", 달, 상승궁" : ", 달 (상승궁은 태어난 시각과 도시가 있어야 알 수 있다고 짧게 덧붙입니다)"}이 함께 만드는 나
+## 연애와 관계 (금성·화성·달)
+## 일과 돈, 재능 (태양·수성·화성)
+## 4원소의 균형과 보완법
+## 앞으로 1년의 흐름 (현재 하늘의 목성·토성 위치를 이 차트에 비추어 읽습니다. 다른 행성의 움직임이나 정확한 날짜는 지어내지 않습니다)
+## 동양의 띠와 함께 보기 (${c.animal.ganZhi}년생, 짧게)
+## 마무리 조언`,
+      };
+    }
     case "tarot":
-    case "zodiac":
       return {
         system: SYSTEM_TAROT,
         context: describeTarot(input, chart),

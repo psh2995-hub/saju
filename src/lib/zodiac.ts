@@ -1,13 +1,15 @@
-import { Solar } from "lunar-javascript";
+import { Lunar, Solar } from "lunar-javascript";
 import { ascendant, eclipticLongitude, signOf, type PlanetKey } from "./astro";
 import { ANIMAL_TRAIT_EN, kSign } from "./en";
 import { placeById } from "./places";
 import { isValidTimeZone, zonedWallClockToUtc } from "./saju";
 import { SIGNS, type SignKey } from "./zodiac-signs";
 
-/** 별자리(서양 점성술) 풀이 — 영문 전용. 출생 시각과 출생 도시가 있으면 달·상승궁까지 정확해진다. */
+/** 별자리(서양 점성술) 풀이. 출생 시각과 출생 도시가 있으면 달·상승궁까지 정확해진다. */
 export type ZodiacInput = {
   name?: string;
+  /** 음력으로 입력했다면 그 원래 값. year·month·day는 양력으로 바꾼 값이다. */
+  lunar?: { year: number; month: number; day: number; leapMonth: boolean };
   year: number;
   month: number;
   day: number;
@@ -38,9 +40,21 @@ const int = (v: unknown) => (typeof v === "number" && Number.isInteger(v) ? v : 
 
 export function validateZodiacInput(raw: unknown): ZodiacInput {
   const r = raw as Record<string, unknown>;
-  const [year, month, day] = [int(r.year), int(r.month), int(r.day)];
+  let [year, month, day] = [int(r.year), int(r.month), int(r.day)];
   if (!(year >= 1920 && year <= 2030)) throw new Error("출생 연도는 1920~2030년 사이여야 합니다.");
-  if (!(month >= 1 && month <= 12) || new Date(Date.UTC(year, month - 1, day)).getUTCDate() !== day) {
+  let lunar: ZodiacInput["lunar"];
+  if (r.calendar === "lunar") {
+    const leapMonth = r.leapMonth === true;
+    if (!(month >= 1 && month <= 12 && day >= 1 && day <= 30)) throw new Error("존재하지 않는 음력 날짜입니다.");
+    // lunar-javascript는 윤달을 음수 월로 표현하고, 존재하지 않는 음력 날짜면 예외를 던진다.
+    try {
+      const solar = Lunar.fromYmdHms(year, leapMonth ? -month : month, day, 12, 0, 0).getSolar();
+      lunar = { year, month, day, leapMonth };
+      [year, month, day] = [solar.getYear(), solar.getMonth(), solar.getDay()];
+    } catch {
+      throw new Error(leapMonth ? "해당 연도에 그 윤달이 없습니다." : "존재하지 않는 음력 날짜입니다.");
+    }
+  } else if (!(month >= 1 && month <= 12) || new Date(Date.UTC(year, month - 1, day)).getUTCDate() !== day) {
     throw new Error("존재하지 않는 날짜입니다.");
   }
   const hour = r.hour == null ? null : int(r.hour);
@@ -52,7 +66,7 @@ export function validateZodiacInput(raw: unknown): ZodiacInput {
   if (!timeZone || timeZone.length > 64 || !isValidTimeZone(timeZone)) throw new Error("출생지 시간대가 올바르지 않습니다.");
 
   const name = typeof r.name === "string" ? r.name.trim().slice(0, 20) : undefined;
-  return { name, year, month, day, hour, minute, ...(place ? { placeId: place.id } : {}), timeZone };
+  return { name, ...(lunar ? { lunar } : {}), year, month, day, hour, minute, ...(place ? { placeId: place.id } : {}), timeZone };
 }
 
 const birthUtc = (input: ZodiacInput, h: number, mi: number) =>

@@ -44,6 +44,14 @@ const PRODUCT_CARDS = [
     free: "카드 의미 무료 · 심층 해석",
     price: PRODUCTS.tarot.price,
   },
+  {
+    href: "/zodiac",
+    eyebrow: "ZODIAC",
+    title: "별자리",
+    text: "생일 별자리만이 아니라, 태어난 순간의 실제 천체 위치로 달·상승궁·금성·화성까지. 사주와는 또 다른 서양 점성술로 나를 읽어 보세요.",
+    free: "출생 차트 무료 · 정밀 풀이",
+    price: PRODUCTS.zodiac.price,
+  },
 ];
 
 export default function Home() {
@@ -52,7 +60,7 @@ export default function Home() {
       {/* 히어로 */}
       <section className="mx-auto grid max-w-5xl items-center gap-12 px-5 pt-16 pb-20 md:grid-cols-[1.3fr_1fr] md:pt-24">
         <div>
-          <Eyebrow>四柱 · TAROT</Eyebrow>
+          <Eyebrow>四柱 · TAROT · ZODIAC</Eyebrow>
           <h1 className="mt-5 text-[32px] leading-[1.25] font-normal text-ink sm:text-[48px]">
             <span className="sm:whitespace-nowrap">타고난 시간을 읽으면</span>
             <br />
@@ -96,8 +104,13 @@ export default function Home() {
       {/* 상품 */}
       <section className="mx-auto max-w-5xl px-5">
         <div className="grid gap-px bg-line md:grid-cols-2">
-          {PRODUCT_CARDS.map((p) => (
-            <Link key={p.href} href={p.href} className="group bg-canvas p-8 transition hover:bg-surface-1 sm:p-10">
+          {PRODUCT_CARDS.map((p, i) => (
+            <Link
+              key={p.href}
+              href={p.href}
+              // 상품 수가 홀수면 마지막 카드를 두 칸에 걸쳐 빈칸을 없앤다.
+              className={`group bg-canvas p-8 transition hover:bg-surface-1 sm:p-10 ${i === PRODUCT_CARDS.length - 1 && PRODUCT_CARDS.length % 2 ? "md:col-span-2" : ""}`}
+            >
               <Eyebrow>{p.eyebrow}</Eyebrow>
               <p className="mt-4 text-[28px] text-ink">{p.title}</p>
               <p className="mt-3 text-[15px] leading-7 text-muted">{p.text}</p>

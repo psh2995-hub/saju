@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NewYearViewEn } from "@/components/en/NewYearViewEn";
 import { SajuChartViewEn } from "@/components/en/SajuChartViewEn";
-import { ZodiacView } from "@/components/en/ZodiacView";
+import { ZodiacView } from "@/components/ZodiacView";
 import { ReadingActions } from "@/components/ReadingActions";
 import { TarotView } from "@/components/TarotView";
 import type { NewYearChart } from "@/lib/newyear";
