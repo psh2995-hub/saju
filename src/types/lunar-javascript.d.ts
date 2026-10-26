@@ -22,7 +22,6 @@ declare module "lunar-javascript" {
     getEightChar(): EightChar;
     getYearInGanZhiByLiChun(): string;
     getMonthInGanZhiExact(): string;
-    getDayInGanZhi(): string;
   }
 
   export class EightChar {

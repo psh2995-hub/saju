@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ILJU_SUMMARY } from "@/lib/ilju";
 import { DAY_MASTER_SUMMARY, type Element, type SajuChart, type SajuInput } from "@/lib/saju";
 import { Eyebrow, Panel } from "./ui";
@@ -64,12 +63,6 @@ export function SajuChartView({ input, chart }: { input: SajuInput; chart: SajuC
           {" — "}
           {dayMaster.text}
         </p>
-        <Link
-          href={`/today?g=${encodeURIComponent(chart.dayMaster.gan)}`}
-          className="mt-4 inline-block text-sm text-gold underline-offset-4 hover:underline"
-        >
-          내 일간으로 오늘의 운세 보기 →
-        </Link>
       </Panel>
 
       <Panel>
