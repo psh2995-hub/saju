@@ -52,8 +52,8 @@
   --color-metal: var(--metal);
   --color-water: var(--water);
 
-  /* 한진그룹산스는 라이선스 확인 후 @font-face로 추가한다. 그 전에는 시스템 한글 글꼴로 대체된다. */
-  --font-sans: "Hanjin Group Sans", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  /* 나눔스퀘어는 layout.tsx에서 next/font/local로 불러온다. */
+  --font-sans: var(--font-nanum-square), "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
   /* 명식의 한자 글자 전용 */
   --font-hanja: var(--font-noto-serif-kr), "Nanum Myeongjo", serif;
 }
