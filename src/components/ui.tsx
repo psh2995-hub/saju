@@ -50,7 +50,7 @@ export function PrimaryButton(props: React.ButtonHTMLAttributes<HTMLButtonElemen
 export const ghostButtonClass =
   "inline-flex h-14 items-center justify-center border border-ink/50 px-6 text-sm tracking-[0.04em] text-ink transition hover:border-ink hover:bg-ink hover:text-black";
 
-/** 시간의길 심볼: 육각형 안에 해가 지나는 길(호)과 해. */
+/** 사이트 심볼: 육각형 안에 해가 지나는 길(호)과 해. */
 export function Mark({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={className}>
