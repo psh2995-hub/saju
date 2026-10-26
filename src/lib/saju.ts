@@ -1,4 +1,4 @@
-import { Lunar, Solar, type EightChar } from "lunar-javascript";
+import { Lunar, LunarUtil, Solar, type EightChar } from "lunar-javascript";
 
 export type Gender = "M" | "F";
 export type Element = "목" | "화" | "토" | "금" | "수";
@@ -67,10 +67,6 @@ const YANG_ZHI = new Set(["子", "寅", "辰", "午", "申", "戌"]);
 export const ZODIAC: Record<string, string> = {
   子: "쥐", 丑: "소", 寅: "호랑이", 卯: "토끼", 辰: "용", 巳: "뱀", 午: "말", 未: "양", 申: "원숭이", 酉: "닭", 戌: "개", 亥: "돼지",
 };
-const TEN_GOD_KO: Record<string, string> = {
-  比肩: "비견", 劫财: "겁재", 食神: "식신", 伤官: "상관", 偏财: "편재", 正财: "정재",
-  七杀: "편관", 正官: "정관", 偏印: "편인", 正印: "정인", 日主: "일간",
-};
 
 /** 지지의 본기(지장간 중 대표 천간) */
 const ZHI_MAIN_STEM: Record<string, string> = {
@@ -128,6 +124,29 @@ function longitudeCorrectionMinutes(ymd: string): number {
   return -30;
 }
 
+/** 그 날짜에 한국에서 쓰던 표준시(UTC 기준 분). 1954-03-21 ~ 1961-08-09는 UTC+8:30, 그 외는 UTC+9. */
+function koreaStandardOffsetMinutes(ymd: string) {
+  return ymd >= "1954-03-21" && ymd < "1961-08-10" ? 510 : 540;
+}
+
+/** 한국 벽시계 시각(서머타임 포함)을 UTC 밀리초로 바꾼다. */
+function koreaWallClockToUtc(s: Solar) {
+  const ymd = s.toYmd();
+  const dst = KOREA_DST.some(([a, b]) => ymd >= a && ymd < b) ? 60 : 0;
+  return Date.UTC(s.getYear(), s.getMonth() - 1, s.getDay(), s.getHour(), s.getMinute(), s.getSecond()) - (koreaStandardOffsetMinutes(ymd) + dst) * 60_000;
+}
+
+/** lunar-javascript는 절기 시각을 베이징 시간(UTC+8)으로 계산한다. */
+const LIB_OFFSET_MS = 8 * 3600_000;
+const libSolarFromUtc = (utc: number) => {
+  const d = new Date(utc + LIB_OFFSET_MS);
+  return Solar.fromYmdHms(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds());
+};
+const libSolarToUtc = (s: Solar) =>
+  Date.UTC(s.getYear(), s.getMonth() - 1, s.getDay(), s.getHour(), s.getMinute(), s.getSecond()) - LIB_OFFSET_MS;
+
+const SIXTY = Array.from({ length: 60 }, (_, i) => "甲乙丙丁戊己庚辛壬癸"[i % 10] + "子丑寅卯辰巳午未申酉戌亥"[i % 12]);
+
 function pad(n: number) {
   return String(n).padStart(2, "0");
 }
@@ -142,14 +161,7 @@ export function koGanZhi(ganZhi: string): string {
   return [...ganZhi].map((c) => GAN_KO[c] ?? ZHI_KO[c] ?? c).join("");
 }
 
-function buildPillar(
-  label: Pillar["label"],
-  gan: string,
-  zhi: string,
-  ganTenGod: string,
-  zhiTenGods: string[],
-  hidden: string[],
-): Pillar {
+function buildPillar(label: Pillar["label"], dayGan: string, gan: string, zhi: string): Pillar {
   return {
     label,
     gan,
@@ -160,10 +172,10 @@ function buildPillar(
     zhiElement: ZHI_ELEMENT[zhi],
     ganYinYang: YANG_GAN.has(gan) ? "양" : "음",
     zhiYinYang: YANG_ZHI.has(zhi) ? "양" : "음",
-    ganTenGod: TEN_GOD_KO[ganTenGod] ?? ganTenGod,
-    // 지지의 십성은 지장간의 본기(배열 첫 번째)를 기준으로 표시한다.
-    zhiTenGod: TEN_GOD_KO[zhiTenGods[0]] ?? zhiTenGods[0],
-    hiddenStems: hidden.map((h) => GAN_KO[h] ?? h),
+    ganTenGod: label === "일주" ? "일간" : tenGod(dayGan, gan),
+    // 지지의 십성은 지장간의 본기를 기준으로 표시한다.
+    zhiTenGod: tenGod(dayGan, zhi),
+    hiddenStems: LunarUtil.ZHI_HIDE_GAN[zhi].map((h) => GAN_KO[h] ?? h),
   };
 }
 
@@ -214,6 +226,8 @@ export function calculateSaju(input: SajuInput, now = new Date()): SajuChart {
     solar = Solar.fromYmdHms(input.year, input.month, input.day, h, mi, 0);
   }
   const solarDate = solar.toYmd();
+  // 절기(연·월 경계)와 대운수는 실제 시점(UTC)으로 비교해야 하므로 보정 전 벽시계 시각을 UTC로 바꿔 둔다.
+  const birthUtc = koreaWallClockToUtc(solar);
 
   const corrections: string[] = [];
   if (timeKnown && input.solarTimeCorrection) {
@@ -229,17 +243,25 @@ export function calculateSaju(input: SajuInput, now = new Date()): SajuChart {
     }
   }
 
+  // 일주·시주는 보정된 현지 시각 기준
   const lunar = solar.getLunar();
   const ec: EightChar = lunar.getEightChar();
   ec.setSect(1);
+  // 연주·월주는 절기 기준이므로 라이브러리의 시간대(베이징)로 옮긴 같은 시점에서 구한다.
+  const libSolar = libSolarFromUtc(birthUtc);
+  const libLunar = libSolar.getLunar();
+  const ecJie: EightChar = libLunar.getEightChar();
+  const dayGan = ec.getDayGan();
+  const yearGan = ecJie.getYearGan();
+  const yearZhi = ecJie.getYearZhi();
+  const monthGan = ecJie.getMonthGan();
+  const monthZhi = ecJie.getMonthZhi();
 
   const pillars: Pillar[] = [];
-  if (timeKnown) {
-    pillars.push(buildPillar("시주", ec.getTimeGan(), ec.getTimeZhi(), ec.getTimeShiShenGan(), ec.getTimeShiShenZhi(), ec.getTimeHideGan()));
-  }
-  pillars.push(buildPillar("일주", ec.getDayGan(), ec.getDayZhi(), ec.getDayShiShenGan(), ec.getDayShiShenZhi(), ec.getDayHideGan()));
-  pillars.push(buildPillar("월주", ec.getMonthGan(), ec.getMonthZhi(), ec.getMonthShiShenGan(), ec.getMonthShiShenZhi(), ec.getMonthHideGan()));
-  pillars.push(buildPillar("연주", ec.getYearGan(), ec.getYearZhi(), ec.getYearShiShenGan(), ec.getYearShiShenZhi(), ec.getYearHideGan()));
+  if (timeKnown) pillars.push(buildPillar("시주", dayGan, ec.getTimeGan(), ec.getTimeZhi()));
+  pillars.push(buildPillar("일주", dayGan, dayGan, ec.getDayZhi()));
+  pillars.push(buildPillar("월주", dayGan, monthGan, monthZhi));
+  pillars.push(buildPillar("연주", dayGan, yearGan, yearZhi));
 
   const elementCounts: Record<Element, number> = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 };
   for (const p of pillars) {
@@ -247,25 +269,31 @@ export function calculateSaju(input: SajuInput, now = new Date()): SajuChart {
     elementCounts[p.zhiElement]++;
   }
 
-  const yun = ec.getYun(input.gender === "M" ? 1 : 0);
-  const daeun = yun
-    .getDaYun()
-    .filter((d) => d.getGanZhi())
-    .slice(0, 9)
-    .map((d) => ({ startAge: d.getStartAge(), startYear: d.getStartYear(), ganZhi: d.getGanZhi(), ko: koGanZhi(d.getGanZhi()) }));
+  // 대운: 양년생 남자·음년생 여자는 순행(다음 절기까지), 나머지는 역행(직전 절기까지).
+  // 대운수는 그 날수를 3으로 나눠 반올림한다(3일 = 1년). 최소 1.
+  const forward = YANG_GAN.has(yearGan) === (input.gender === "M");
+  const jie = forward ? libLunar.getNextJie() : libLunar.getPrevJie();
+  const days = Math.abs(libSolarToUtc(jie.getSolar()) - birthUtc) / 86_400_000;
+  const daeunNumber = Math.max(1, Math.round(days / 3));
+  const monthIndex = SIXTY.indexOf(monthGan + monthZhi);
+  const birthYear = Number(solarDate.slice(0, 4));
+  const daeun = Array.from({ length: 9 }, (_, i) => {
+    const ganZhi = SIXTY[(monthIndex + (forward ? i + 1 : -(i + 1)) + 60) % 60];
+    const startAge = daeunNumber + i * 10;
+    return { startAge, startYear: birthYear + startAge, ganZhi, ko: koGanZhi(ganZhi) };
+  });
 
   const yearOf = (y: number) => {
     const gz = Solar.fromYmd(y, 6, 1).getLunar().getYearInGanZhiByLiChun();
     return { year: y, ganZhi: gz, ko: koGanZhi(gz) };
   };
   const currentYear = now.getFullYear();
-  const dayGan = ec.getDayGan();
 
   return {
     pillars,
     dayMaster: { gan: dayGan, ko: GAN_KO[dayGan], element: GAN_ELEMENT[dayGan], yinYang: YANG_GAN.has(dayGan) ? "양" : "음" },
     elementCounts,
-    zodiac: ZODIAC[ec.getYearZhi()],
+    zodiac: ZODIAC[yearZhi],
     daeun,
     daeunStartAge: daeun[0]?.startAge ?? 0,
     solarDate,

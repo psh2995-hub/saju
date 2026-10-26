@@ -45,9 +45,8 @@ export function calculateNewYear(input: SajuInput, now = new Date()): NewYearCha
     return { label: `${month}월`, ganZhi: gz, ko: koGanZhi(gz), ganTenGod: tenGod(dayGan, gz[0]), zhiTenGod: tenGod(dayGan, gz[1]) };
   });
 
-  const birthYear = Number(base.solarDate.slice(0, 4));
-  const age = target - birthYear + 1;
-  const current = [...base.daeun].reverse().find((d) => d.startAge <= age) ?? null;
+  // 대운은 startYear(출생 연도 + 대운수)부터 시작한다.
+  const current = [...base.daeun].reverse().find((d) => d.startYear <= target) ?? null;
 
   return {
     base,
