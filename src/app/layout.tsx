@@ -18,7 +18,6 @@ const NAV = [
   ["/gunghap", "궁합"],
   ["/newyear", "신년운세"],
   ["/tarot", "타로"],
-  ["/today", "오늘의 운세"],
 ] as const;
 
 export const metadata: Metadata = {

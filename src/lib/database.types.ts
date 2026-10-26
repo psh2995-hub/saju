@@ -15,56 +15,6 @@ export type Database = {
   };
   public: {
     Tables: {
-      daily_fortunes: {
-        Row: {
-          body: string;
-          created_at: string;
-          day_gan: string;
-          day_ganzhi: string;
-          fortune_date: string;
-          summary: string;
-        };
-        Insert: {
-          body: string;
-          created_at?: string;
-          day_gan: string;
-          day_ganzhi: string;
-          fortune_date: string;
-          summary: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["daily_fortunes"]["Insert"]>;
-        Relationships: [];
-      };
-      daily_subscribers: {
-        Row: {
-          active: boolean;
-          created_at: string;
-          day_gan: string;
-          id: string;
-          last_sent_on: string | null;
-          phone: string;
-          unsubscribe_token: string;
-          verified_at: string | null;
-          verify_attempts: number;
-          verify_code_hash: string | null;
-          verify_expires_at: string | null;
-        };
-        Insert: {
-          active?: boolean;
-          created_at?: string;
-          day_gan: string;
-          id?: string;
-          last_sent_on?: string | null;
-          phone: string;
-          unsubscribe_token?: string;
-          verified_at?: string | null;
-          verify_attempts?: number;
-          verify_code_hash?: string | null;
-          verify_expires_at?: string | null;
-        };
-        Update: Partial<Database["public"]["Tables"]["daily_subscribers"]["Insert"]>;
-        Relationships: [];
-      };
       followups: {
         Row: {
           ai_result: string | null;

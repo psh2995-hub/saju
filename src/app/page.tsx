@@ -108,13 +108,6 @@ export default function Home() {
             </Link>
           ))}
         </div>
-        <Link href="/today" className="mt-px flex items-center justify-between gap-4 bg-surface-1 p-6 transition hover:bg-surface-2 sm:px-10">
-          <div>
-            <Eyebrow>DAILY</Eyebrow>
-            <p className="mt-2 text-lg text-ink">오늘의 운세 · 매일 아침 카카오톡으로</p>
-          </div>
-          <span className="text-sm text-gold">무료 →</span>
-        </Link>
       </section>
 
       {/* 이용 안내 */}

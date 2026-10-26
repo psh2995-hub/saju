@@ -1,7 +1,5 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { z } from "zod";
 import type { GunghapChart, GunghapInput } from "./gunghap";
 import type { NewYearChart } from "./newyear";
 import type { SajuChart, SajuInput } from "./saju";
@@ -188,41 +186,4 @@ ${followup.question}
 - 질문이 명식·카드로 답할 수 없는 내용(특정 날짜의 복권 번호, 다른 사람의 사적인 정보 등)이면 그 이유를 부드럽게 설명하고 도움이 될 만한 방향을 제시합니다.
 ${COMMON_RULES}`;
   return streamText(r.system, user, 16000);
-}
-
-const DailySchema = z.object({
-  summary: z.string().describe("오늘의 한 줄 요약. 25자 이내, 마침표 없이"),
-  body: z.string().describe("오늘의 운세 본문. 3~4문장, 존댓말"),
-  tip: z.string().describe("오늘 실천할 작은 행동 하나. 20자 이내"),
-});
-
-export type DailyText = z.infer<typeof DailySchema>;
-
-/** (날짜, 일간) 조합의 오늘의 운세. 짧은 글이라 스트리밍 없이 구조화 출력으로 받는다. */
-export async function generateDaily(params: {
-  ymd: string;
-  dayGan: string;
-  dayGanKo: string;
-  dayElement: string;
-  todayGanZhi: string;
-  ganTenGod: string;
-  zhiTenGod: string;
-}): Promise<DailyText> {
-  const anthropic = new Anthropic();
-  const response = await anthropic.messages.parse({
-    model: MODEL,
-    max_tokens: 4000,
-    output_config: { effort: "low", format: zodOutputFormat(DailySchema) },
-    system: SYSTEM_SAJU,
-    messages: [
-      {
-        role: "user",
-        content: `${params.ymd} 오늘의 일진은 ${params.todayGanZhi}입니다.
-일간이 ${params.dayGan}(${params.dayGanKo}, ${params.dayElement})인 사람에게 오늘 일진의 천간은 ${params.ganTenGod}, 지지는 ${params.zhiTenGod}에 해당합니다.
-이 관계를 근거로 오늘의 운세를 써 주세요. 일·돈·사람 중 오늘 두드러지는 한두 가지에 집중하고, 공포를 주거나 단정하는 표현은 쓰지 않습니다.`,
-      },
-    ],
-  });
-  if (!response.parsed_output) throw new Error(`오늘의 운세 생성 실패: ${response.stop_reason}`);
-  return response.parsed_output;
 }

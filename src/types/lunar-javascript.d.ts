@@ -8,6 +8,7 @@ declare module "lunar-javascript" {
     getDay(): number;
     getHour(): number;
     getMinute(): number;
+    getSecond(): number;
     getLunar(): Lunar;
     next(days: number): Solar;
     toYmd(): string;
@@ -22,8 +23,19 @@ declare module "lunar-javascript" {
     getEightChar(): EightChar;
     getYearInGanZhiByLiChun(): string;
     getMonthInGanZhiExact(): string;
-    getDayInGanZhi(): string;
+    getPrevJie(): JieQi;
+    getNextJie(): JieQi;
   }
+
+  export class JieQi {
+    getName(): string;
+    getSolar(): Solar;
+  }
+
+  export const LunarUtil: {
+    /** 지지별 지장간. 첫 번째가 본기. */
+    ZHI_HIDE_GAN: Record<string, string[]>;
+  };
 
   export class EightChar {
     setSect(sect: 1 | 2): void;
