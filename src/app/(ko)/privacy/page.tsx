@@ -41,7 +41,7 @@ export default function PrivacyPage() {
 
       <h2>3. 개인정보 처리 위탁</h2>
       <ul>
-        <li>코리아포트원㈜ 및 각 전자결제대행사: 결제 처리</li>
+        <li>토스페이먼츠㈜: 결제 처리</li>
         <li>Supabase Inc.: 데이터베이스 운영 (서버 위치: 대한민국 서울 리전)</li>
         <li>Vercel Inc.: 웹사이트 호스팅</li>
       </ul>

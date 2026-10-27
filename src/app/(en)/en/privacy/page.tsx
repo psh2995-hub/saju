@@ -48,7 +48,7 @@ export default function EnPrivacyPage() {
 
       <h2>3. Service providers</h2>
       <ul>
-        <li>Korea PortOne Inc. and payment processors: payment processing</li>
+        <li>Toss Payments Co., Ltd.: payment processing</li>
         <li>Supabase Inc.: database (servers in the Seoul region, Republic of Korea)</li>
         <li>Vercel Inc.: website hosting</li>
       </ul>

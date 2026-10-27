@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { formatPrice, UI_TEXT, type Currency, type Lang } from "@/lib/i18n";
+import type { PaymentRedirect } from "@/lib/order";
 import { followupPriceFor } from "@/lib/products";
 import type { FollowupRow } from "@/lib/supabase";
 import { Unlock } from "./Unlock";
 import { Eyebrow, inputClass } from "./ui";
-
-type Redirect = { paymentId: string; code: string | null; message: string | null; followupId: string } | null;
 
 /** 결제한 풀이에 이어서 묻는 추가 질문 목록과 질문 입력란 */
 export function Followups({
@@ -22,7 +21,7 @@ export function Followups({
   currency: Currency;
   initial: FollowupRow[];
   mockPayment: boolean;
-  paymentRedirect: Redirect;
+  paymentRedirect: PaymentRedirect | null;
   lang?: Lang;
 }) {
   const t = UI_TEXT[lang];
