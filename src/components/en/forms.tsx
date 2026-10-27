@@ -7,7 +7,7 @@ import { readingPath } from "@/lib/i18n";
 import { PLACES, placeById } from "@/lib/places";
 import { SPREAD_SIZE, TAROT_TOPICS_EN, type TarotTopic } from "@/lib/tarot-config";
 import { sunSign } from "@/lib/zodiac-signs";
-import { Field, inputClass, PrimaryButton, Segmented } from "../ui";
+import { Eyebrow, Field, inputClass, PrimaryButton, Segmented } from "../ui";
 
 const FALLBACK_ERROR = "Something went wrong. Please try again in a moment.";
 
@@ -59,24 +59,28 @@ function DateFields({
   year,
   month,
   day,
+  lunar = false,
   onChange,
 }: {
   year: number;
   month: number;
   day: number;
+  /** 음력 날짜는 달마다 29일 또는 30일이라 1~30일을 보여 주고 서버에서 검증한다. */
+  lunar?: boolean;
   onChange: (v: { year: number; month: number; day: number }) => void;
 }) {
+  const maxDay = (y: number, m: number) => (lunar ? 30 : daysIn(y, m));
   const set = (v: Partial<{ year: number; month: number; day: number }>) => {
     const next = { year, month, day, ...v };
-    onChange({ ...next, day: Math.min(next.day, daysIn(next.year, next.month)) });
+    onChange({ ...next, day: Math.min(next.day, maxDay(next.year, next.month)) });
   };
   return (
     <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-2">
       <select className={inputClass} value={month} onChange={(e) => set({ month: +e.target.value })} aria-label="Month">
-        {MONTH_EN.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+        {MONTH_EN.map((m, i) => <option key={m} value={i + 1}>{lunar ? `Month ${i + 1}` : m}</option>)}
       </select>
       <select className={inputClass} value={day} onChange={(e) => set({ day: +e.target.value })} aria-label="Day">
-        {range(1, daysIn(year, month)).map((d) => <option key={d} value={d}>{d}</option>)}
+        {range(1, maxDay(year, month)).map((d) => <option key={d} value={d}>{d}</option>)}
       </select>
       <select className={inputClass} value={year} onChange={(e) => set({ year: +e.target.value })} aria-label="Year">
         {range(1920, 2030).reverse().map((y) => <option key={y} value={y}>{y}</option>)}
@@ -85,64 +89,159 @@ function DateFields({
   );
 }
 
-/** 사주·K-별자리 신년운세용 출생 정보. 양력·출생지 시계 기준이다. */
-export function EnBirthForm({ kind, submitLabel }: { kind: "saju" | "newyear"; submitLabel: string }) {
-  const [v, setV] = useState({
-    name: "",
-    gender: "F" as "M" | "F",
-    year: 1995,
-    month: 1,
-    day: 1,
-    timeUnknown: false,
-    hour: 12,
-    minute: 0,
-    placeId: "",
-  });
-  const { submitting, error, run } = useSubmit();
-  const set = <K extends keyof typeof v>(key: K, value: (typeof v)[K]) => setV({ ...v, [key]: value });
-
+/** 양력·음력 선택. 음력은 한국 음력(윤달 포함)이다. */
+function CalendarFields({
+  calendar,
+  leapMonth,
+  onChange,
+}: {
+  calendar: "solar" | "lunar";
+  leapMonth: boolean;
+  onChange: (v: { calendar: "solar" | "lunar"; leapMonth: boolean }) => void;
+}) {
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        const timeZone = placeById(v.placeId)?.timeZone ?? deviceTimeZone();
-        void run(kind, {
-          name: v.name,
-          gender: v.gender,
-          calendar: "solar",
-          leapMonth: false,
-          year: v.year,
-          month: v.month,
-          day: v.day,
-          hour: v.timeUnknown ? null : v.hour,
-          minute: v.timeUnknown ? null : v.minute,
-          solarTimeCorrection: true,
-          timeZone,
-        });
-      }}
-      className="space-y-6 bg-surface-1 p-6 sm:p-8"
-    >
+    <>
+      <Segmented
+        value={calendar}
+        onChange={(c) => onChange({ calendar: c, leapMonth: c === "solar" ? false : leapMonth })}
+        options={[{ value: "solar", label: "Regular (solar)" }, { value: "lunar", label: "Korean lunar" }]}
+      />
+      {calendar === "lunar" && (
+        <label className="mt-3 flex items-center gap-2 text-sm text-muted">
+          <input type="checkbox" className="accent-gold" checked={leapMonth} onChange={(e) => onChange({ calendar, leapMonth: e.target.checked })} /> Leap
+          month
+        </label>
+      )}
+    </>
+  );
+}
+
+type EnBirth = {
+  name: string;
+  gender: "M" | "F";
+  calendar: "solar" | "lunar";
+  leapMonth: boolean;
+  year: number;
+  month: number;
+  day: number;
+  timeUnknown: boolean;
+  hour: number;
+  minute: number;
+  placeId: string;
+};
+
+const emptyEnBirth = (gender: "M" | "F" = "F"): EnBirth => ({
+  name: "",
+  gender,
+  calendar: "solar",
+  leapMonth: false,
+  year: 1995,
+  month: 1,
+  day: 1,
+  timeUnknown: false,
+  hour: 12,
+  minute: 0,
+  placeId: "",
+});
+
+/** 서버의 SajuInput 형태로 바꾼다. 출생지를 고르지 않으면 이 기기의 시간대를 쓴다. */
+const toSajuInput = (v: EnBirth) => ({
+  name: v.name,
+  gender: v.gender,
+  calendar: v.calendar,
+  leapMonth: v.leapMonth,
+  year: v.year,
+  month: v.month,
+  day: v.day,
+  hour: v.timeUnknown ? null : v.hour,
+  minute: v.timeUnknown ? null : v.minute,
+  solarTimeCorrection: true,
+  timeZone: placeById(v.placeId)?.timeZone ?? deviceTimeZone(),
+});
+
+/** 사주·신년운세·궁합에 쓰는 한 사람의 출생 정보 입력 */
+function EnBirthFields({ value: v, onChange }: { value: EnBirth; onChange: (v: EnBirth) => void }) {
+  const set = <K extends keyof EnBirth>(key: K, value: EnBirth[K]) => onChange({ ...v, [key]: value });
+  return (
+    <div className="space-y-6">
       <Field label="Name (optional)">
         <input className={inputClass} value={v.name} onChange={(e) => set("name", e.target.value)} maxLength={20} placeholder="Alex" />
       </Field>
       <Field label="Gender">
         <Segmented value={v.gender} onChange={(g) => set("gender", g)} options={[{ value: "F", label: "Female" }, { value: "M", label: "Male" }]} />
-        <p className="mt-2 text-xs text-muted-soft">Korean astrology uses this to set the direction of your ten-year luck cycles.</p>
+        <p className="mt-2 text-xs text-muted-soft">Korean astrology uses this to set the direction of the ten-year luck cycles.</p>
+      </Field>
+      <Field label="Calendar">
+        <CalendarFields calendar={v.calendar} leapMonth={v.leapMonth} onChange={(c) => onChange({ ...v, ...c })} />
       </Field>
       <Field label="Date of birth">
-        <DateFields year={v.year} month={v.month} day={v.day} onChange={(d) => setV({ ...v, ...d })} />
+        <DateFields year={v.year} month={v.month} day={v.day} lunar={v.calendar === "lunar"} onChange={(d) => onChange({ ...v, ...d })} />
       </Field>
       <Field label="Time of birth">
-        <TimeFields hour={v.hour} minute={v.minute} unknown={v.timeUnknown} onChange={(t) => setV({ ...v, ...t })} />
+        <TimeFields hour={v.hour} minute={v.minute} unknown={v.timeUnknown} onChange={(t) => onChange({ ...v, ...t })} />
       </Field>
       <Field label="Where were you born?">
         <PlaceSelect value={v.placeId} onChange={(id) => set("placeId", id)} />
-        <p className="mt-2 text-xs text-muted-soft">Pick your birth city or the nearest one in the same time zone. We use the local clock time there, and handle daylight saving for you.</p>
+        <p className="mt-2 text-xs text-muted-soft">
+          Pick the birth city or the nearest one in the same time zone. We use the local clock time there, and handle daylight saving for you.
+        </p>
       </Field>
+    </div>
+  );
+}
+
+/** 사주·K-별자리 신년운세: 한 사람의 출생 정보 */
+export function EnBirthForm({ kind, submitLabel }: { kind: "saju" | "newyear"; submitLabel: string }) {
+  const [birth, setBirth] = useState(emptyEnBirth());
+  const { submitting, error, run } = useSubmit();
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void run(kind, toSajuInput(birth));
+      }}
+      className="space-y-6 bg-surface-1 p-6 sm:p-8"
+    >
+      <EnBirthFields value={birth} onChange={setBirth} />
       {error && <p className="text-sm text-error">{error}</p>}
       <PrimaryButton type="submit" disabled={submitting}>
         {submitting ? "Building your chart…" : submitLabel}
       </PrimaryButton>
+    </form>
+  );
+}
+
+/** K-Compatibility: 두 사람의 출생 정보 */
+export function EnGunghapForm() {
+  const [a, setA] = useState(emptyEnBirth("F"));
+  const [b, setB] = useState(emptyEnBirth("M"));
+  const { submitting, error, run } = useSubmit();
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void run("gunghap", { a: toSajuInput(a), b: toSajuInput(b) });
+      }}
+      className="space-y-px"
+    >
+      <div className="bg-surface-1 p-6 sm:p-8">
+        <Eyebrow>01 · YOU</Eyebrow>
+        <div className="mt-5">
+          <EnBirthFields value={a} onChange={setA} />
+        </div>
+      </div>
+      <div className="bg-surface-1 p-6 sm:p-8">
+        <Eyebrow>02 · THE OTHER PERSON</Eyebrow>
+        <div className="mt-5">
+          <EnBirthFields value={b} onChange={setB} />
+        </div>
+      </div>
+      <div className="bg-surface-1 p-6 sm:p-8">
+        {error && <p className="mb-4 text-sm text-error">{error}</p>}
+        <PrimaryButton type="submit" disabled={submitting}>
+          {submitting ? "Reading both charts…" : "See our compatibility — free"}
+        </PrimaryButton>
+      </div>
     </form>
   );
 }
@@ -178,15 +277,28 @@ function TimeFields({
 
 /** 별자리(서양 점성술) 입력 */
 export function ZodiacForm() {
-  const [v, setV] = useState({ name: "", year: 1995, month: 1, day: 1, hour: 12, minute: 0, timeUnknown: false, placeId: "" });
+  const [v, setV] = useState({
+    name: "",
+    calendar: "solar" as "solar" | "lunar",
+    leapMonth: false,
+    year: 1995,
+    month: 1,
+    day: 1,
+    hour: 12,
+    minute: 0,
+    timeUnknown: false,
+    placeId: "",
+  });
   const { submitting, error, run } = useSubmit();
-  const sign = sunSign(v.month, v.day);
+  const sign = v.calendar === "solar" ? sunSign(v.month, v.day) : null;
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         void run("zodiac", {
           name: v.name,
+          calendar: v.calendar,
+          leapMonth: v.leapMonth,
           year: v.year,
           month: v.month,
           day: v.day,
@@ -198,11 +310,16 @@ export function ZodiacForm() {
       }}
       className="space-y-6 bg-surface-1 p-6 sm:p-8"
     >
+      <Field label="Calendar">
+        <CalendarFields calendar={v.calendar} leapMonth={v.leapMonth} onChange={(c) => setV({ ...v, ...c })} />
+      </Field>
       <Field label="Date of birth">
-        <DateFields year={v.year} month={v.month} day={v.day} onChange={(d) => setV({ ...v, ...d })} />
-        <p className="mt-3 text-sm text-gold">
-          <span className="font-[family-name:var(--font-symbol)]">{sign.symbol}</span> {sign.name} <span className="text-muted">· {sign.dates}</span>
-        </p>
+        <DateFields year={v.year} month={v.month} day={v.day} lunar={v.calendar === "lunar"} onChange={(d) => setV({ ...v, ...d })} />
+        {sign && (
+          <p className="mt-3 text-sm text-gold">
+            <span className="font-[family-name:var(--font-symbol)]">{sign.symbol}</span> {sign.name} <span className="text-muted">· {sign.dates}</span>
+          </p>
+        )}
       </Field>
       <Field label="Time of birth">
         <TimeFields hour={v.hour} minute={v.minute} unknown={v.timeUnknown} onChange={(t) => setV({ ...v, ...t })} />

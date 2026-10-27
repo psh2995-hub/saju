@@ -1,5 +1,6 @@
 "use client";
 
+import { PLACES, placeById } from "@/lib/places";
 import { Field, inputClass, Segmented } from "./ui";
 
 export type BirthValue = {
@@ -14,6 +15,8 @@ export type BirthValue = {
   hour: number;
   minute: number;
   solarTimeCorrection: boolean;
+  /** 해외 출생지(places.ts). 빈 값이면 한국 출생이다. */
+  placeId: string;
 };
 
 export const emptyBirth = (gender: "M" | "F" = "F"): BirthValue => ({
@@ -28,6 +31,7 @@ export const emptyBirth = (gender: "M" | "F" = "F"): BirthValue => ({
   hour: 12,
   minute: 0,
   solarTimeCorrection: true,
+  placeId: "",
 });
 
 /** 서버의 SajuInput 형태로 바꾼다. */
@@ -43,6 +47,8 @@ export function toSajuInput(v: BirthValue) {
     hour: v.timeUnknown ? null : v.hour,
     minute: v.timeUnknown ? null : v.minute,
     solarTimeCorrection: v.solarTimeCorrection,
+    // 해외 출생이면 출생지 시계 기준으로 계산한다(한국 보정은 적용하지 않는다).
+    ...(placeById(v.placeId) ? { timeZone: placeById(v.placeId)!.timeZone } : {}),
   };
 }
 
@@ -96,7 +102,7 @@ export function BirthFields({ value, onChange }: { value: BirthValue; onChange: 
         <label className="mt-3 flex items-center gap-2 text-sm text-muted">
           <input type="checkbox" className="accent-gold" checked={value.timeUnknown} onChange={(e) => set("timeUnknown", e.target.checked)} /> 태어난 시간을 몰라요
         </label>
-        {!value.timeUnknown && (
+        {!value.timeUnknown && !value.placeId && (
           <label className="mt-1 flex items-start gap-2 text-sm text-muted">
             <input
               type="checkbox"
@@ -109,6 +115,17 @@ export function BirthFields({ value, onChange }: { value: BirthValue; onChange: 
               <span className="block text-xs text-muted-soft">표준시와 실제 태양시의 차이(약 30분)와 과거 서머타임을 반영합니다.</span>
             </span>
           </label>
+        )}
+      </Field>
+      <Field label="태어난 곳">
+        <select className={inputClass} value={value.placeId} onChange={(e) => set("placeId", e.target.value)}>
+          <option value="">한국</option>
+          <optgroup label="해외 (가까운 도시)">
+            {PLACES.filter((p) => p.timeZone !== "Asia/Seoul").map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+          </optgroup>
+        </select>
+        {value.placeId && (
+          <p className="mt-2 text-xs leading-5 text-muted-soft">해외 출생은 그곳의 현지 시각 그대로 계산합니다. 현지 서머타임도 반영합니다.</p>
         )}
       </Field>
     </div>

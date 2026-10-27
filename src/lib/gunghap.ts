@@ -1,3 +1,5 @@
+import { ANIMAL_EN, ELEMENT_EN } from "./en";
+import type { Lang } from "./i18n";
 import { josa } from "./korean";
 import { calculateSaju, elementRelation, ZODIAC, validateSajuInput, type Element, type SajuChart, type SajuInput } from "./saju";
 
@@ -29,7 +31,8 @@ export function validateGunghapInput(raw: unknown): GunghapInput {
 }
 
 /** 두 사람의 명식에서 일간·일지·띠·오행 보완 관계를 뽑아 무료 요약으로 보여 준다. */
-export function calculateGunghap(input: GunghapInput, now = new Date()): GunghapChart {
+export function calculateGunghap(input: GunghapInput, now = new Date(), lang: Lang = "ko"): GunghapChart {
+  if (lang === "en") return calculateGunghapEn(input, now);
   const a = calculateSaju(input.a, now);
   const b = calculateSaju(input.b, now);
   const nameA = input.a.name || "나";
@@ -95,3 +98,67 @@ export function calculateGunghap(input: GunghapInput, now = new Date()): Gunghap
   return { a, b, points };
 }
 
+
+/** 영문 궁합 포인트. 판단 기준은 한국어와 같고 문장만 영어로 쓴다. */
+function calculateGunghapEn(input: GunghapInput, now: Date): GunghapChart {
+  const a = calculateSaju(input.a, now);
+  const b = calculateSaju(input.b, now);
+  const nameA = input.a.name || "You";
+  const nameB = input.b.name || "your partner";
+  const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+  const points: GunghapPoint[] = [];
+
+  const da = day(a);
+  const db = day(b);
+  if (STEM_COMBINE[da.gan + db.gan] ?? STEM_COMBINE[db.gan + da.gan]) {
+    points.push({
+      title: `Heavenly Stem combination ${da.gan}${db.gan}`,
+      text: "Your two core characters pull toward each other. It is the kind of bond that feels oddly comfortable and magnetic from the very first meeting.",
+      tone: "good",
+    });
+  }
+
+  const ea = ELEMENT_EN[a.dayMaster.element];
+  const eb = ELEMENT_EN[b.dayMaster.element];
+  const relText: Record<number, GunghapPoint> = {
+    0: { title: "Same element at the core", text: `You are both ${ea} people, so you think and move at a similar pace. Easy as friends, but when stubbornness clashes, someone has to give way.`, tone: "neutral" },
+    1: { title: `${cap(nameA)} lift${nameA === "You" ? "" : "s"} ${nameB} up`, text: `${ea} feeds ${eb}. ${cap(nameA)} naturally take${nameA === "You" ? "" : "s"} care, and ${nameB} draws strength from it.`, tone: "good" },
+    [-1]: { title: `${cap(nameB)} lifts ${nameA === "You" ? "you" : nameA} up`, text: `${eb} feeds ${ea}. ${cap(nameB)} becomes a steady source of support.`, tone: "good" },
+    2: { title: `${cap(nameA)} tend${nameA === "You" ? "" : "s"} to lead`, text: `${ea} controls ${eb}. ${cap(nameA)} easily take${nameA === "You" ? "" : "s"} the lead, so respecting the other's pace is the key.`, tone: "care" },
+    [-2]: { title: `${cap(nameB)} tends to lead`, text: `${eb} controls ${ea}. Words from ${nameB} can feel sharp, so don't let small hurts pile up unspoken.`, tone: "care" },
+  };
+  points.push(relText[elementRelation(a.dayMaster.element, b.dayMaster.element)]);
+
+  if (pairKey(da.zhi, db.zhi, BRANCH_COMBINE)) {
+    points.push({ title: `Day branches combine ${da.zhi}${db.zhi}`, text: "Your partner palaces (the day branches) harmonize, so daily rhythms and moods tend to match.", tone: "good" });
+  } else if (pairKey(da.zhi, db.zhi, BRANCH_CLASH)) {
+    points.push({ title: `Day branches clash ${da.zhi}${db.zhi}`, text: "Your partner palaces collide, so daily habits can cause friction. The upside: you push each other to grow.", tone: "care" });
+  }
+
+  const ya = year(a).zhi;
+  const yb = year(b).zhi;
+  const animals = `${ANIMAL_EN[ya]} and ${ANIMAL_EN[yb]}`;
+  if (ya !== yb && TRIPLE_GROUPS.some((g) => g.includes(ya) && g.includes(yb))) {
+    points.push({ title: `${animals} — a natural trio`, text: "Your zodiac animals look in the same direction. Set goals together and you gain momentum.", tone: "good" });
+  } else if (pairKey(ya, yb, BRANCH_COMBINE)) {
+    points.push({ title: `${animals} — a matching pair`, text: "Your zodiac animals complete each other.", tone: "good" });
+  } else if (pairKey(ya, yb, BRANCH_CLASH)) {
+    points.push({ title: `${animals} — opposites`, text: "Opposite temperaments: you attract each other and clash for the same reason.", tone: "care" });
+  } else if (pairKey(ya, yb, BRANCH_RESENT)) {
+    points.push({ title: `${animals} — easily misunderstood`, text: "Small misunderstandings pile up easily between these animals. Checking in with words protects the relationship.", tone: "care" });
+  }
+
+  const fills = (from: SajuChart, to: SajuChart) =>
+    (Object.keys(to.elementCounts) as Element[]).filter((el) => to.elementCounts[el] === 0 && from.elementCounts[el] >= 2).map((el) => ELEMENT_EN[el]);
+  const aGives = fills(a, b);
+  const bGives = fills(b, a);
+  if (aGives.length || bGives.length) {
+    const parts = [
+      aGives.length ? `${cap(nameA)} bring${nameA === "You" ? "" : "s"} the ${aGives.join(" and ")} ${nameB} lacks` : "",
+      bGives.length ? `${aGives.length ? nameB : cap(nameB)} brings the ${bGives.join(" and ")} ${nameA === "You" ? "you lack" : `${nameA} lacks`}` : "",
+    ].filter(Boolean);
+    points.push({ title: "Elements that fill each other in", text: `${parts.join(", and ")}. Together you find your balance.`, tone: "good" });
+  }
+
+  return { a, b, points };
+}

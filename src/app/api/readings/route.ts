@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { calculateGunghap, validateGunghapInput } from "@/lib/gunghap";
 import { isLang, type Lang } from "@/lib/i18n";
 import { calculateNewYear } from "@/lib/newyear";
-import { isKindAvailable, priceFor, PRODUCTS, type ReadingKind } from "@/lib/products";
+import { priceFor, PRODUCTS, type ReadingKind } from "@/lib/products";
 import { calculateSaju, validateSajuInput } from "@/lib/saju";
 import { db } from "@/lib/supabase";
 import { drawTarot, validateTarotInput } from "@/lib/tarot";
@@ -22,6 +22,8 @@ const ERRORS_EN: Record<string, string> = {
   "출생지 시간대가 올바르지 않습니다.": "Please choose a valid birth time zone.",
   "질문 주제를 선택해 주세요.": "Please choose a topic.",
   "카드 세 장을 골라 주세요.": "Please pick three cards.",
+  "존재하지 않는 음력 날짜입니다.": "That lunar date doesn't exist. Please check the month and day.",
+  "해당 연도에 그 윤달이 없습니다.": "There was no leap month like that in that year.",
 };
 
 function fail(message: string, lang: Lang, status = 400) {
@@ -40,7 +42,7 @@ function build(kind: string, raw: unknown, lang: Lang): { input: object; chart: 
     }
     case "gunghap": {
       const input = validateGunghapInput(raw);
-      return { input, chart: calculateGunghap(input) };
+      return { input, chart: calculateGunghap(input, new Date(), lang) };
     }
     case "tarot": {
       const input = validateTarotInput(raw);
@@ -64,7 +66,7 @@ export async function POST(request: Request) {
   }
   const lang: Lang = isLang(body.lang) ? body.lang : "ko";
   const kind = body.kind as ReadingKind;
-  if (!(kind in PRODUCTS) || !isKindAvailable(kind, lang)) return fail("잘못된 요청입니다.", lang);
+  if (!(kind in PRODUCTS)) return fail("잘못된 요청입니다.", lang);
 
   let built: ReturnType<typeof build>;
   try {

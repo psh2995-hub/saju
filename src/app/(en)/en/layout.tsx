@@ -11,6 +11,7 @@ const NAV = [
   ["/en/zodiac", "Zodiac"],
   ["/en/tarot", "Tarot"],
   ["/en/forecast", "K-Zodiac Forecast"],
+  ["/en/compatibility", "K-Compatibility"],
   ["/en/saju", "Korean Birth Chart"],
 ] as const;
 
@@ -58,9 +59,9 @@ export default function EnglishLayout({ children }: LayoutProps<"/en">) {
               {SITE_NAME_EN}
             </p>
             <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-body">
-              <Link href="/terms" className="hover:text-gold">Terms (Korean)</Link>
-              <Link href="/privacy" className="font-bold hover:text-gold">Privacy (Korean)</Link>
-              <Link href="/refund" className="hover:text-gold">Refunds (Korean)</Link>
+              <Link href="/en/terms" className="hover:text-gold">Terms</Link>
+              <Link href="/en/privacy" className="font-bold hover:text-gold">Privacy</Link>
+              <Link href="/en/refund" className="hover:text-gold">Refunds</Link>
             </div>
             <div className="mt-6 space-y-1 text-[13px] leading-6">
               <p>

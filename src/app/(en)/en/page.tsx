@@ -31,6 +31,14 @@ const PRODUCT_CARDS = [
     price: PRICES_USD.newyear,
   },
   {
+    href: "/en/compatibility",
+    eyebrow: "K-COMPATIBILITY",
+    title: "Are We a Match?",
+    text: "Korean couples check their gunghap before anything serious. Read two birth charts side by side: what draws you together, where you clash, and the years ahead.",
+    free: "Key points free · full reading",
+    price: PRICES_USD.gunghap,
+  },
+  {
     href: "/en/saju",
     eyebrow: "SAJU · FOUR PILLARS",
     title: "Korean Birth Chart",
@@ -103,8 +111,13 @@ export default function EnglishHome() {
 
       <section className="mx-auto max-w-5xl px-5">
         <div className="grid gap-px bg-line md:grid-cols-2">
-          {PRODUCT_CARDS.map((p) => (
-            <Link key={p.href} href={p.href} className="group bg-canvas p-8 transition hover:bg-surface-1 sm:p-10">
+          {PRODUCT_CARDS.map((p, i) => (
+            <Link
+              key={p.href}
+              href={p.href}
+              // 상품 수가 홀수면 마지막 카드를 두 칸에 걸쳐 빈칸을 없앤다.
+              className={`group bg-canvas p-8 transition hover:bg-surface-1 sm:p-10 ${i === PRODUCT_CARDS.length - 1 && PRODUCT_CARDS.length % 2 ? "md:col-span-2" : ""}`}
+            >
               <Eyebrow>{p.eyebrow}</Eyebrow>
               <p className="mt-4 text-[28px] text-ink">{p.title}</p>
               <p className="mt-3 text-[15px] leading-7 text-muted">{p.text}</p>

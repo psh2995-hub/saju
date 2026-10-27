@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PillarRow } from "@/components/PillarRow";
 import { Eyebrow, ghostButtonClass } from "@/components/ui";
@@ -37,6 +37,8 @@ async function Shared({ params }: PageProps<"/s/[shareId]">) {
   const { shareId } = await params;
   const reading = await getReadingByShareId(shareId);
   if (!reading) notFound();
+  // 영문 페이지에서 만든 풀이의 공유 링크는 영문 공유 페이지에서 연다.
+  if (reading.lang === "en") redirect(`/en/s/${shareId}`);
   const s = shareSummary(reading);
 
   return (

@@ -37,6 +37,7 @@ export function SajuChartView({ input, chart }: { input: SajuInput; chart: SajuC
         <p className="mt-2 text-xs leading-5 text-muted">
           양력 {chart.solarDate} · 음력 {chart.lunarDate} · {chart.zodiac}띠
           {chart.usedTime ? ` · ${chart.usedTime} 기준${chart.corrections.length ? `(${chart.corrections.join(", ")})` : ""}` : " · 시간 모름"}
+          {input.timeZone ? ` · 출생지 시간대 ${input.timeZone}` : ""}
         </p>
         <div className={`mt-6 grid gap-1.5 text-center ${chart.pillars.length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
           {chart.pillars.map((p) => (

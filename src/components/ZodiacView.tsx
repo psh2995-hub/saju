@@ -39,7 +39,9 @@ function texts(lang: Lang) {
         year: "numeric",
         timeZone: "UTC",
       });
-      return `Born ${date} · ${time ?? "birth time unknown"}${place ? ` · ${place}` : ""}`;
+      const l = input.lunar;
+      const lunar = l ? ` (Korean lunar ${l.leapMonth ? "leap " : ""}month ${l.month}, day ${l.day})` : "";
+      return `Born ${date}${lunar} · ${time ?? "birth time unknown"}${place ? ` · ${place}` : ""}`;
     },
     noRising: ko ? "태어난 시각과 도시를 넣으면 상승궁도 알 수 있습니다. " : "Add your birth time and city to reveal your Rising sign. ",
     moonNote: ko

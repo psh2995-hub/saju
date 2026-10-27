@@ -24,25 +24,27 @@ Next.js 16(App Router) + Supabase + 포트원 V2 + Claude API로 만든 사주·
 
 ## 해외(영문) 페이지 `/en`
 
-해외 방문자에게는 서양 별자리에 익숙하다는 점을 살려 **별자리(Zodiac)**를 맨 앞에, **타로**를 그다음에 두고, 사주는 "K-Zodiac"(한국식 별자리) 느낌으로 소개합니다.
+**한국어와 영문 페이지는 같은 서비스(상품·무료 결과·유료 풀이·추가 질문·공유·약관)를 제공하고, 표시 언어와 첫 화면 배치만 다릅니다.** 해외 방문자에게는 서양 별자리에 익숙하다는 점을 살려 **별자리(Zodiac)**를 맨 앞에, **타로**를 그다음에 두고, 사주는 "K-Zodiac"(한국식 별자리) 느낌으로 소개합니다.
 
 | 상품 | 무료로 보여 주는 것 | 유료(AI, 영어) |
 |---|---|---|
 | Zodiac (`/en/zodiac`, `zodiac`) | 태양·달·상승궁, 수성·금성·화성의 별자리(출생 시각·도시 기준 실제 천체 위치), 4원소 분포, 한국 띠 | 빅3·연애·일과 돈·원소·앞으로 1년(현재 목성·토성 위치) 풀이 |
 | Tarot (`/en/tarot`, `tarot`) | 카드 3장과 영문 의미 | 영문 심층 해석 |
 | K-Zodiac Forecast (`/en/forecast`, `newyear`) | 그해 이름(예: Year of the Red Sheep), 세운 십성, 월운 | 월별 영문 운세 |
+| K-Compatibility (`/en/compatibility`, `gunghap`) | 두 사람 명식, 궁합 포인트(영문) | 영문 궁합 풀이 |
 | Korean Birth Chart (`/en/saju`, `saju`) | 사주 명식, 일주를 "Yin Metal Pig" 같은 한국식 탄생 사인으로, 오행, 대운 | 영문 정밀 풀이 |
 
 - 별자리 계산은 `astronomy-engine`(MIT)으로 출생 시점의 황경(트로피컬)을 구하고, 상승궁은 출생 도시 좌표(`src/lib/places.ts`)로 계산합니다. 시간을 모르면 정오로 계산하고 상승궁은 보여 주지 않으며, 그날 달이 별자리를 옮겼으면 달 별자리가 불확실하다고 표시합니다.
-- 영문 상품의 달러 가격은 `src/lib/products.ts`의 `PRICES_USD`(센트)입니다: Zodiac $4, Tarot $3, K-Zodiac Forecast $4, Korean Birth Chart $5, 추가 질문 $2.
+- 영문 상품의 달러 가격은 `src/lib/products.ts`의 `PRICES_USD`(센트)입니다: Zodiac $4, Tarot $3, K-Zodiac Forecast $4, K-Compatibility $5, Korean Birth Chart $5, 추가 질문 $2.
 - **달러 결제(토스페이먼츠)**: `NEXT_PUBLIC_PORTONE_CHANNEL_KEY_USD`에 포트원의 토스페이먼츠 USD 채널 키를 넣으면, 그 뒤 만들어지는 영문 풀이는 달러(센트 단위)로 저장되고 해외 발급 카드로만 결제됩니다(`bypass.tosspayments.useInternationalCardOnly`). 비워 두면 원화로 결제하고, 화면에는 같은 가격대의 달러(3,900원 → $3, 4,900원 → $4, 5,900원 → $5)를 보여 줍니다. 결제 검증은 풀이·추가 질문에 저장된 통화(`currency`)와 금액을 포트원 응답과 비교합니다.
 - `src/proxy.ts`: 첫 화면(`/`)에서 접속 국가(`x-vercel-ip-country`)가 한국이 아니고 브라우저 언어가 한국어가 아니면 `/en`으로 보냅니다. 상단의 `EN` / `한국어` 링크로 고른 언어는 `lang` 쿠키에 1년간 기억합니다. 다른 주소(결과·공유 링크)는 건드리지 않습니다.
 - `readings.lang`에 풀이 언어를 저장하고, AI 프롬프트와 결과 페이지(`/r/[id]` ↔ `/en/r/[id]`)가 이를 따릅니다.
 - 해외 출생자는 출생지 시간대(IANA, 예: `America/New_York`)를 받아 출생지 시계 기준으로 일·시주를 세우고, 연·월주와 대운수는 같은 시점의 UTC로 계산합니다(한국 경도·서머타임 보정은 한국 출생에만 적용).
 - 토스페이먼츠는 통화별로 MID가 따로 필요합니다(USD용 MID를 받아 포트원에 채널로 추가). PayPal은 별도 신청이며 아직 연동하지 않았습니다.
-- 약관·환불정책·개인정보처리방침은 아직 한국어만 있습니다.
+- 약관·환불정책·개인정보처리방침은 영문 번역(`/en/terms`, `/en/privacy`, `/en/refund`)이 있고, 두 언어가 다르면 한국어판이 우선한다고 적어 두었습니다.
+- 생일 입력은 두 언어 모두 양력·음력(윤달)과 해외 출생지를 받습니다.
 
-공유: 결과 페이지의 "결과 공유하기"는 `/s/{share_id}`(무료 요약만, 개인 정보 없음)를 공유하고, 링크 미리보기와 "이미지 저장"은 `/api/share-image/{share_id}`가 만듭니다.
+공유: 결과 페이지의 "결과 공유하기"는 `/s/{share_id}`(영문 풀이는 `/en/s/{share_id}`, 무료 요약만, 개인 정보 없음)를 공유하고, 링크 미리보기와 "이미지 저장"은 `/api/share-image/{share_id}`가 만듭니다.
 
 ## 구조
 
