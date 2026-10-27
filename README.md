@@ -46,6 +46,17 @@ Next.js 16(App Router) + Supabase + 토스페이먼츠(결제창형 결제) + Cl
 
 공유: 결과 페이지의 "결과 공유하기"는 `/s/{share_id}`(영문 풀이는 `/en/s/{share_id}`, 무료 요약만, 개인 정보 없음)를 공유하고, 링크 미리보기와 "이미지 저장"은 `/api/share-image/{share_id}`가 만듭니다.
 
+## 관리자 화면 `/admin`
+
+결제 매출(오늘·7일·30일·전체, 상품별, 최근 14일), 풀이별 입력값·결제 기록·AI 풀이·추가 질문 답변을 봅니다.
+
+- **관리자 도메인에서만 열립니다.** `ADMIN_HOST`에 넣은 도메인에서만 `/admin`, `/api/admin/*`가 열리고, 그 밖의 도메인에서는 404입니다(`src/proxy.ts`와 각 화면의 `requireAdmin()`이 함께 확인). Vercel 프로젝트 Settings → Domains에 관리자용 도메인을 추가하고 같은 값을 `ADMIN_HOST`에 넣습니다.
+- **로그인:** `ADMIN_PASSWORD` + OTP(2단계 인증). OTP는 관리자 화면 → 보안에서 QR을 앱에 등록하고 코드를 확인한 뒤, 그 비밀값을 `ADMIN_TOTP_SECRET`에 넣고 다시 배포하면 켜집니다. 한 번 쓴 OTP는 다시 받지 않습니다.
+- **잠금:** 15분 안에 같은 IP에서 5회, 전체 20회 실패하면 잠깁니다. 시도는 `admin_login_attempts` 테이블에 남고 보안 화면에서 볼 수 있습니다.
+- **세션:** `ADMIN_SESSION_SECRET`으로 서명한 쿠키(`__Host-`, Secure, HttpOnly, SameSite=Strict, 12시간). 비밀번호·OTP 비밀값·세션 비밀값 중 하나를 바꾸면 모든 세션이 끊깁니다. 로그인·로그아웃 요청은 Origin을 확인합니다.
+- **기타:** `ADMIN_ALLOWED_IPS`로 접속 IP를 제한할 수 있습니다. 관리자 응답에는 `noindex`, `no-store`, 프레임 금지 헤더가 붙습니다.
+- 매출에서 테스트(가짜) 결제(`payment_id`가 `mock_`)와 환불은 따로 셉니다. 토스페이먼츠 테스트 키로 한 결제는 실결제와 구분되지 않으니, 라이브 전환 뒤 날짜로 구분해서 보세요.
+
 ## 구조
 
 | 경로 | 내용 |
@@ -59,6 +70,7 @@ Next.js 16(App Router) + Supabase + 토스페이먼츠(결제창형 결제) + Cl
 | `src/lib/payments.ts`, `src/lib/order.ts` | 토스페이먼츠 결제 승인·조회(완료 콜백·웹훅 공용), 주문번호 |
 | `src/lib/products.ts` | 상품명·가격 |
 | `src/lib/site.ts` | 상호명·사업자 정보(환경 변수) |
+| `src/lib/admin/`, `src/app/(admin)/admin` | 관리자 인증(비밀번호·OTP·세션)과 화면 |
 | `supabase/migrations/` | DB 스키마 (RLS 켜짐, 정책 없음 → 서버 secret key로만 접근) |
 
 ## 타로 카드 이미지

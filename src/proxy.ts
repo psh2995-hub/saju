@@ -10,8 +10,38 @@ const ONE_YEAR = 60 * 60 * 24 * 365;
  * - 쿠키가 없으면 Vercel이 넣어 주는 접속 국가가 한국이 아니고, 브라우저 언어가 한국어가 아닐 때만 보낸다.
  * 다른 주소(공유 링크, 결과 페이지)는 그대로 둔다.
  */
+const ADMIN_PATH = /^\/(admin|api\/admin)(\/|$)/;
+
+/**
+ * 관리자 화면은 ADMIN_HOST 도메인에서만 연다. 다른 도메인의 /admin은 404이고,
+ * 관리자 도메인에서는 관리자 경로만 열며 ADMIN_ALLOWED_IPS가 있으면 그 IP만 받는다.
+ * (화면·API에서도 같은 확인을 한 번 더 한다. src/lib/admin/auth.ts)
+ */
+function adminProxy(request: NextRequest, pathname: string) {
+  const adminHost = process.env.ADMIN_HOST?.trim().toLowerCase();
+  const onAdminHost = !!adminHost && request.headers.get("host")?.toLowerCase() === adminHost;
+  if (!onAdminHost) return ADMIN_PATH.test(pathname) ? new NextResponse("Not Found", { status: 404 }) : null;
+
+  if (pathname === "/") return NextResponse.redirect(new URL("/admin", request.url));
+  if (!ADMIN_PATH.test(pathname)) return new NextResponse("Not Found", { status: 404 });
+  const allowed = (process.env.ADMIN_ALLOWED_IPS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const ip = request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (allowed.length && (!ip || !allowed.includes(ip))) return new NextResponse("Forbidden", { status: 403 });
+
+  const res = NextResponse.next();
+  res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  res.headers.set("Cache-Control", "no-store");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Content-Security-Policy", "frame-ancestors 'none'");
+  res.headers.set("Referrer-Policy", "no-referrer");
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  return res;
+}
+
 export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+  const admin = adminProxy(request, pathname);
+  if (admin) return admin;
   const choice = searchParams.get("lang");
 
   if (choice === "ko" || choice === "en") {
@@ -34,5 +64,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/en"],
+  matcher: ["/", "/en", "/admin", "/admin/:path*", "/api/admin/:path*"],
 };
