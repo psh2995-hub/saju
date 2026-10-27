@@ -33,7 +33,8 @@ function adminProxy(request: NextRequest, pathname: string) {
   res.headers.set("Cache-Control", "no-store");
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("Content-Security-Policy", "frame-ancestors 'none'");
-  res.headers.set("Referrer-Policy", "no-referrer");
+  // no-referrer면 브라우저가 폼 POST의 Origin을 "null"로 보내므로, 같은 출처에만 보내는 same-origin을 쓴다.
+  res.headers.set("Referrer-Policy", "same-origin");
   res.headers.set("X-Content-Type-Options", "nosniff");
   return res;
 }

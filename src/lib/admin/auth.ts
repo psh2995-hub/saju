@@ -45,11 +45,22 @@ export function requestAllowed(h: Headers) {
   return cfg.allowedIps.length === 0 || cfg.allowedIps.includes(clientIp(h));
 }
 
-/** 폼 POST가 관리자 도메인에서 온 것인지 확인한다(CSRF 방지, SameSite=Strict 쿠키와 함께). */
+/**
+ * 폼 POST가 관리자 도메인에서 온 것인지 확인한다(CSRF 방지, SameSite=Strict 쿠키와 함께).
+ * 브라우저가 Origin을 "null"로 보내는 경우가 있어, 그때는 브라우저가 붙이는 Sec-Fetch-Site로 판단한다.
+ */
 export function sameOrigin(h: Headers) {
-  const origin = h.get("origin");
   const host = adminConfig().host;
-  return !!origin && !!host && new URL(origin).host.toLowerCase() === host;
+  const origin = h.get("origin");
+  if (!host) return false;
+  if (origin && origin !== "null") {
+    try {
+      return new URL(origin).host.toLowerCase() === host;
+    } catch {
+      return false;
+    }
+  }
+  return h.get("sec-fetch-site") === "same-origin";
 }
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest();
