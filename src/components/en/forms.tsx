@@ -201,7 +201,7 @@ export function ZodiacForm() {
       <Field label="Date of birth">
         <DateFields year={v.year} month={v.month} day={v.day} onChange={(d) => setV({ ...v, ...d })} />
         <p className="mt-3 text-sm text-gold">
-          {sign.symbol} {sign.name} <span className="text-muted">· {sign.dates}</span>
+          <span className="font-[family-name:var(--font-symbol)]">{sign.symbol}</span> {sign.name} <span className="text-muted">· {sign.dates}</span>
         </p>
       </Field>
       <Field label="Time of birth">

@@ -55,3 +55,46 @@ export const POINTS = {
 } as const;
 
 export const signByKey = (key: SignKey) => SIGNS.find((s) => s.key === key)!;
+
+/** 한국어 화면·풀이에 쓰는 별자리 이름과 성향 */
+export const SIGN_KO: Record<SignKey, { name: string; dates: string; keywords: string }> = {
+  aries: { name: "양자리", dates: "3월 21일 ~ 4월 19일", keywords: "대담하고 개척적이며 성급한" },
+  taurus: { name: "황소자리", dates: "4월 20일 ~ 5월 20일", keywords: "꾸준하고 감각적이며 고집 있는" },
+  gemini: { name: "쌍둥이자리", dates: "5월 21일 ~ 6월 20일", keywords: "호기심 많고 재치 있으며 변화를 좋아하는" },
+  cancer: { name: "게자리", dates: "6월 21일 ~ 7월 22일", keywords: "다정하고 보호 본능이 강하며 감정이 깊은" },
+  leo: { name: "사자자리", dates: "7월 23일 ~ 8월 22일", keywords: "따뜻하고 당당하며 너그러운" },
+  virgo: { name: "처녀자리", dates: "8월 23일 ~ 9월 22일", keywords: "꼼꼼하고 성실하며 스스로에게 엄격한" },
+  libra: { name: "천칭자리", dates: "9월 23일 ~ 10월 22일", keywords: "공정하고 매력적이며 결정이 신중한" },
+  scorpio: { name: "전갈자리", dates: "10월 23일 ~ 11월 21일", keywords: "강렬하고 의리 있으며 속을 잘 드러내지 않는" },
+  sagittarius: { name: "궁수자리", dates: "11월 22일 ~ 12월 21일", keywords: "모험을 좋아하고 솔직하며 자유로운" },
+  capricorn: { name: "염소자리", dates: "12월 22일 ~ 1월 19일", keywords: "야심 있고 절제하며 신중한" },
+  aquarius: { name: "물병자리", dates: "1월 20일 ~ 2월 18일", keywords: "독창적이고 이상주의적이며 쿨한" },
+  pisces: { name: "물고기자리", dates: "2월 19일 ~ 3월 20일", keywords: "꿈이 많고 공감 능력이 높으며 섬세한" },
+};
+
+export const ELEMENT_KO = { Fire: "불", Earth: "흙", Air: "공기", Water: "물" } as const;
+export const MODALITY_KO = { Cardinal: "활동궁", Fixed: "고정궁", Mutable: "변통궁" } as const;
+
+export const RULER_KO: Record<string, string> = {
+  Mars: "화성",
+  Venus: "금성",
+  Mercury: "수성",
+  "the Moon": "달",
+  "the Sun": "태양",
+  "Pluto and Mars": "명왕성·화성",
+  Jupiter: "목성",
+  Saturn: "토성",
+  "Uranus and Saturn": "천왕성·토성",
+  "Neptune and Jupiter": "해왕성·목성",
+};
+
+export const POINTS_KO: Record<keyof typeof POINTS, { name: string; meaning: string }> = {
+  sun: { name: "태양", meaning: "타고난 본질" },
+  moon: { name: "달", meaning: "감정과 속마음" },
+  rising: { name: "상승궁", meaning: "남에게 비치는 첫인상" },
+  mercury: { name: "수성", meaning: "생각하고 말하는 방식" },
+  venus: { name: "금성", meaning: "사랑하는 방식" },
+  mars: { name: "화성", meaning: "원하는 것을 쫓는 방식" },
+  jupiter: { name: "목성", meaning: "행운과 성장의 자리" },
+  saturn: { name: "토성", meaning: "인내와 책임의 자리" },
+};

@@ -22,8 +22,8 @@ export type EnKind = keyof typeof PRODUCT_NAMES_EN;
 
 export const isEnKind = (kind: string): kind is EnKind => kind in PRODUCT_NAMES_EN;
 
-/** 별자리 풀이는 영문 전용, 궁합은 한국어 전용 */
-export const isKindAvailable = (kind: ReadingKind, lang: Lang) => (lang === "en" ? isEnKind(kind) : kind !== "zodiac");
+/** 영문 페이지에서는 영문 상품만 판다(궁합은 한국어 전용). */
+export const isKindAvailable = (kind: ReadingKind, lang: Lang) => lang === "ko" || isEnKind(kind);
 
 /** 결제한 풀이에 이어서 묻는 추가 질문 1회 */
 export const FOLLOWUP = { name: "추가 질문", price: 2900 } as const;

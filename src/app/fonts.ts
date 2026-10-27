@@ -1,4 +1,4 @@
-import { Noto_Serif_KR } from "next/font/google";
+import { Noto_Sans_Symbols, Noto_Serif_KR } from "next/font/google";
 import localFont from "next/font/local";
 
 // 한국어·영문 루트 레이아웃이 함께 쓰는 글꼴
@@ -24,4 +24,12 @@ const hanja = Noto_Serif_KR({
   preload: false,
 });
 
-export const fontVariables = `${nanumSquare.variable} ${hanja.variable}`;
+// 별자리 기호(♈~♓)는 기기마다 대체 글꼴이 달라 모양이 들쭉날쭉하므로 전용 글꼴로 맞춘다.
+const symbols = Noto_Sans_Symbols({
+  variable: "--font-noto-symbols",
+  subsets: ["symbols"],
+  weight: "400",
+  preload: false,
+});
+
+export const fontVariables = `${nanumSquare.variable} ${hanja.variable} ${symbols.variable}`;

@@ -5,7 +5,7 @@ import type { Element, SajuChart } from "./saju";
 import type { ReadingRow } from "./supabase";
 import type { TarotChart } from "./tarot";
 import type { ZodiacChart } from "./zodiac";
-import { POINTS, signByKey } from "./zodiac-signs";
+import { POINTS, POINTS_KO, SIGN_KO, signByKey } from "./zodiac-signs";
 
 export type SharePillar = { label: string; gan: string; zhi: string; ganElement: Element; zhiElement: Element };
 
@@ -86,16 +86,22 @@ export function shareSummary(reading: ReadingRow): ShareSummary {
       };
     }
     case "zodiac": {
-      // 별자리 풀이는 영문 전용 상품이다.
       const c = reading.chart as unknown as ZodiacChart;
       const sun = signByKey(c.placements[0].sign);
+      const big = c.placements.filter((p) => p.point === "sun" || p.point === "moon" || p.point === "rising");
+      if (reading.lang === "ko") {
+        return {
+          eyebrow: `${SIGN_KO[sun.key].name} · 별자리`,
+          hanja: c.animal.ganZhi,
+          headline: big.map((p) => `${POINTS_KO[p.point].name} ${SIGN_KO[p.sign].name}`).join(" · "),
+          body: `${SIGN_KO[sun.key].keywords} 사람.`,
+          cta: { label: "내 별자리도 무료로 보기", href: "/zodiac" },
+        };
+      }
       return {
-        eyebrow: `${sun.symbol} ${sun.name} · Zodiac`,
+        eyebrow: `${sun.name} · Zodiac`,
         hanja: c.animal.ganZhi,
-        headline: c.placements
-          .filter((p) => p.point === "sun" || p.point === "moon" || p.point === "rising")
-          .map((p) => `${POINTS[p.point].name} in ${signByKey(p.sign).name}`)
-          .join(" · "),
+        headline: big.map((p) => `${POINTS[p.point].name} in ${signByKey(p.sign).name}`).join(" · "),
         body: `${sun.keywords}. Korean zodiac: ${c.animal.name}.`,
         cta: { label: "See your zodiac chart", href: "/en/zodiac" },
       };

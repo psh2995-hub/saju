@@ -56,6 +56,8 @@
   --font-sans: var(--font-nanum-square), "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
   /* 명식의 한자 글자 전용 */
   --font-hanja: var(--font-noto-serif-kr), "Nanum Myeongjo", serif;
+  /* 별자리 기호 전용 */
+  --font-symbol: var(--font-noto-symbols), "Segoe UI Symbol", "Apple Symbols", sans-serif;
 }
 
 html {
