@@ -20,14 +20,14 @@ export function readingPath(id: string, lang: Lang) {
   return lang === "en" ? `/en/r/${id}` : `/r/${id}`;
 }
 
-/** 영문 화면에서 원화 가격을 달러로 보여 줄 때 쓰는 환율. 표시용이며 실제 결제는 원화로 한다. */
-const KRW_PER_USD = 1400;
-
-/** 영문은 달러로 보여 준다. 원화 결제라면 달러로 바꿔 정수로 반올림한다(4,900원 → $3.5 → $4). */
+/**
+ * 영문은 달러로 보여 준다. 원화 결제라면 가격대를 그대로 달러 가격대로 옮긴다
+ * (2,900원 → $2, 3,900원 → $3, 4,900원 → $4, 5,900원 → $5). products.ts의 달러 가격과 같은 규칙이다.
+ */
 export function formatPrice(n: number, lang: Lang, currency: Currency = "KRW") {
   if (currency === "USD") return `$${Number.isInteger(n / 100) ? n / 100 : (n / 100).toFixed(2)}`;
   if (lang === "ko") return `${n.toLocaleString("ko-KR")}원`;
-  return `$${Math.round(n / KRW_PER_USD)}`;
+  return `$${Math.floor(n / 1000)}`;
 }
 
 /** 결제·풀이·추가 질문 영역(클라이언트 컴포넌트)의 문구 */
