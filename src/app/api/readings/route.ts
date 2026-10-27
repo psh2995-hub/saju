@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { calculateGunghap, validateGunghapInput } from "@/lib/gunghap";
 import { isLang, type Lang } from "@/lib/i18n";
 import { calculateNewYear } from "@/lib/newyear";
-import { isKindAvailable, PRODUCTS, type ReadingKind } from "@/lib/products";
+import { isKindAvailable, priceFor, PRODUCTS, type ReadingKind } from "@/lib/products";
 import { calculateSaju, validateSajuInput } from "@/lib/saju";
 import { db } from "@/lib/supabase";
 import { drawTarot, validateTarotInput } from "@/lib/tarot";
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await db()
     .from("readings")
-    .insert({ kind, lang, input: built.input as Json, chart: built.chart as Json, price: PRODUCTS[kind].price })
+    .insert({ kind, lang, input: built.input as Json, chart: built.chart as Json, ...priceFor(kind, lang) })
     .select("id")
     .single();
   if (error) {

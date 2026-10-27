@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Eyebrow, ghostButtonClass, Mark } from "@/components/ui";
 import { formatPrice, SITE_NAME_EN } from "@/lib/i18n";
-import { PRODUCTS } from "@/lib/products";
+import { PRICES_USD } from "@/lib/products";
 import { signByKey } from "@/lib/zodiac-signs";
 
 // 해외 방문자는 서양 별자리를 더 친숙하게 여기므로 별자리를 맨 앞에, 타로를 그다음에 둔다.
@@ -12,7 +12,7 @@ const PRODUCT_CARDS = [
     title: "Zodiac Reading",
     text: "Go beyond your sun sign. Your Moon, Rising, Venus and Mars, calculated from real planet positions at the moment you were born.",
     free: "Birth chart free · in-depth reading",
-    price: PRODUCTS.zodiac.price,
+    price: PRICES_USD.zodiac,
   },
   {
     href: "/en/tarot",
@@ -20,7 +20,7 @@ const PRODUCT_CARDS = [
     title: "Tarot Reading",
     text: "Hold a question in mind and pick three cards from the full 78-card deck. See what they mean for free, then get a reading woven around your question.",
     free: "Card meanings free · in-depth reading",
-    price: PRODUCTS.tarot.price,
+    price: PRICES_USD.tarot,
   },
   {
     href: "/en/forecast",
@@ -28,7 +28,7 @@ const PRODUCT_CARDS = [
     title: "Your Year, the Korean Way",
     text: "Koreans don't just ask what animal year it is — they ask what that year means for them. See the year's energy against your own chart, month by month.",
     free: "Year & monthly energy free · full forecast",
-    price: PRODUCTS.newyear.price,
+    price: PRICES_USD.newyear,
   },
   {
     href: "/en/saju",
@@ -36,7 +36,7 @@ const PRODUCT_CARDS = [
     title: "Korean Birth Chart",
     text: "The centuries-old Korean way of reading destiny. Discover your Korean birth sign, your five elements and the ten-year cycles that shape your life.",
     free: "Chart free · in-depth reading",
-    price: PRODUCTS.saju.price,
+    price: PRICES_USD.saju,
   },
 ];
 
@@ -110,7 +110,7 @@ export default function EnglishHome() {
               <p className="mt-3 text-[15px] leading-7 text-muted">{p.text}</p>
               <p className="mt-8 flex items-baseline justify-between border-t border-line pt-5 text-sm text-muted">
                 {p.free}
-                <span className="text-xl text-ink">{formatPrice(p.price, "en")}</span>
+                <span className="text-xl text-ink">{formatPrice(p.price, "en", "USD")}</span>
               </p>
             </Link>
           ))}

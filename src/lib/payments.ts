@@ -22,6 +22,7 @@ type Target = {
   id: string;
   readingId: string;
   price: number;
+  currency: string;
   status: string;
   paymentId: string | null;
 };
@@ -34,11 +35,11 @@ async function findTarget(customData: string | undefined): Promise<Target | null
   } catch {}
   if (typeof data.followupId === "string") {
     const f = await getFollowup(data.followupId);
-    return f && { table: "followups", id: f.id, readingId: f.reading_id, price: f.price, status: f.status, paymentId: f.payment_id };
+    return f && { table: "followups", id: f.id, readingId: f.reading_id, price: f.price, currency: f.currency, status: f.status, paymentId: f.payment_id };
   }
   if (typeof data.readingId === "string") {
     const r = await getReading(data.readingId);
-    return r && { table: "readings", id: r.id, readingId: r.id, price: r.price, status: r.status, paymentId: r.payment_id };
+    return r && { table: "readings", id: r.id, readingId: r.id, price: r.price, currency: r.currency, status: r.status, paymentId: r.payment_id };
   }
   return null;
 }
@@ -71,7 +72,8 @@ export async function syncPayment(paymentId: string): Promise<SyncResult> {
     );
 
   if (payment.status === "PAID") {
-    if (payment.amount.total !== target.price || payment.currency !== "KRW") {
+    // 금액은 통화의 최소 단위(원·센트)로 비교한다.
+    if (payment.amount.total !== target.price || payment.currency !== target.currency) {
       return { ok: false, error: "결제 금액이 상품 가격과 일치하지 않습니다. 고객센터로 문의해 주세요." };
     }
     if (target.status === "unpaid") {

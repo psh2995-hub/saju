@@ -1,4 +1,4 @@
-import type { Lang } from "./i18n";
+import { usdPaymentsEnabled, type Currency, type Lang } from "./i18n";
 
 export const PRODUCTS = {
   saju: { name: "사주 정밀 풀이", price: 9900 },
@@ -27,6 +27,20 @@ export const isKindAvailable = (kind: ReadingKind, lang: Lang) => (lang === "en"
 
 /** 결제한 풀이에 이어서 묻는 추가 질문 1회 */
 export const FOLLOWUP = { name: "추가 질문", price: 2900 } as const;
+
+/** 영문 상품의 달러 가격(센트). 원화 가격을 1달러 1,400원으로 바꿔 반올림한 값과 같게 맞췄다. */
+export const PRICES_USD: Record<EnKind, number> = { zodiac: 400, tarot: 300, newyear: 700, saju: 700 };
+export const FOLLOWUP_PRICE_USD = 200;
+
+/** 새 풀이의 결제 통화와 금액. 영문 풀이는 달러 채널이 설정돼 있을 때만 달러로 받는다. */
+export function priceFor(kind: ReadingKind, lang: Lang): { price: number; currency: Currency } {
+  if (lang === "en" && isEnKind(kind) && usdPaymentsEnabled()) return { price: PRICES_USD[kind], currency: "USD" };
+  return { price: PRODUCTS[kind].price, currency: "KRW" };
+}
+
+export function followupPriceFor(currency: Currency) {
+  return currency === "USD" ? FOLLOWUP_PRICE_USD : FOLLOWUP.price;
+}
 
 export function formatWon(n: number) {
   return `${n.toLocaleString("ko-KR")}원`;
