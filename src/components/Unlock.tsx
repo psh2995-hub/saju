@@ -194,7 +194,7 @@ export function Unlock({ target, productName, price, currency = "KRW", initialSt
           <input type="checkbox" className="mt-0.5 accent-gold" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
           <span>
             {t.agreeBefore}
-            <Link href="/refund" className="text-body underline hover:text-gold" target="_blank">
+            <Link href={lang === "en" ? "/en/refund" : "/refund"} className="text-body underline hover:text-gold" target="_blank">
               {t.refundPolicy}
             </Link>
             {t.agreeAfter}

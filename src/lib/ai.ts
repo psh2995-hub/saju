@@ -177,6 +177,22 @@ function requestForEn(reading: ReadingRow): Request {
         rules: COMMON_RULES_EN,
       };
     }
+    case "gunghap": {
+      const i = input as GunghapInput;
+      return {
+        system: SYSTEM_SAJU_EN,
+        context: describeGunghap(i, chart),
+        instructions: `Write an in-depth Korean compatibility (gunghap) reading for the two charts above. Call them by name (or "you" and "your partner" if no names were given) and don't take sides. In this order (about 1,800–2,500 words in total):
+## First Impressions and Attraction
+## How You Think and Talk Together
+## Dating and Living Together
+## Where You Clash and How to Work It Out
+## Money and Everyday Life
+## The Next Few Years (your Ten-year Luck Cycles and this year's and next year's energy)
+## Advice for This Relationship`,
+        rules: COMMON_RULES_EN,
+      };
+    }
     default: {
       const c = chart as SajuChart;
       return {

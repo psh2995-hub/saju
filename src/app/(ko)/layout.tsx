@@ -68,7 +68,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </p>
             </div>
             <p className="mt-6 border-t border-line pt-6 text-xs leading-5 text-muted-soft">
-              모든 풀이는 AI가 명리학·타로 이론을 바탕으로 작성한 참고용 콘텐츠이며, 의학·법률·투자 등 전문적인 판단을
+              모든 풀이는 AI가 명리학·타로·서양 점성술 이론을 바탕으로 작성한 참고용 콘텐츠이며, 의학·법률·투자 등 전문적인 판단을
               대신하지 않습니다.
             </p>
           </div>

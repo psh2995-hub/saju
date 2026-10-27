@@ -1,4 +1,6 @@
+import { ANIMAL_TRAIT_EN, DAY_MASTER_EN, kSign, kYearName, PILLAR_EN, romanize, TEN_GOD_EN, TEN_GOD_YEAR_EN } from "./en";
 import { calculateGunghap, type GunghapChart, type GunghapInput } from "./gunghap";
+import type { Lang } from "./i18n";
 import { ILJU_SUMMARY } from "./ilju";
 import { TEN_GOD_YEAR, type NewYearChart } from "./newyear";
 import type { Element, SajuChart } from "./saju";
@@ -13,6 +15,7 @@ export type SharePillar = { label: string; gan: string; zhi: string; ganElement:
  * 공유 페이지·공유 이미지에 쓰는 요약. 이름·생년월일·질문 같은 개인 정보는 넣지 않는다.
  */
 export type ShareSummary = {
+  lang: Lang;
   eyebrow: string;
   headline: string;
   hanja?: string;
@@ -32,6 +35,73 @@ const iljuOf = (c: SajuChart) => {
 };
 
 export function shareSummary(reading: ReadingRow): ShareSummary {
+  const summary = reading.lang === "en" && reading.kind !== "zodiac" ? shareSummaryEn(reading) : shareSummaryKo(reading);
+  return { lang: reading.lang, ...summary };
+}
+
+/** 영문 풀이의 공유 요약. 별자리는 shareSummaryKo가 언어별로 처리한다. */
+function shareSummaryEn(reading: ReadingRow): Omit<ShareSummary, "lang"> {
+  const pillarsEn = (c: SajuChart) => pillarsOf(c).map((p) => ({ ...p, label: PILLAR_EN[p.label] }));
+  const dayOf = (c: SajuChart) => {
+    const d = c.pillars.find((p) => p.label === "일주")!;
+    return { hanja: d.gan + d.zhi, sign: kSign(d.gan + d.zhi), roman: romanize(d.gan + d.zhi), dm: DAY_MASTER_EN[d.gan], trait: ANIMAL_TRAIT_EN[d.zhi] };
+  };
+  switch (reading.kind) {
+    case "newyear": {
+      const c = reading.chart as unknown as NewYearChart;
+      const d = dayOf(c.base);
+      return {
+        eyebrow: `K-Zodiac Forecast ${c.year.year}`,
+        hanja: c.year.ganZhi,
+        headline: `${kYearName(c.year.ganZhi)}: a year of the ${TEN_GOD_EN[c.year.ganTenGod]} for me`,
+        body: `${TEN_GOD_YEAR_EN[c.year.ganTenGod]} (Korean birth sign: the ${d.sign})`,
+        pillars: pillarsEn(c.base),
+        cta: { label: `See your ${c.year.year} forecast`, href: "/en/forecast" },
+      };
+    }
+    case "gunghap": {
+      const c = reading.chart as unknown as GunghapChart;
+      const a = dayOf(c.a);
+      const b = dayOf(c.b);
+      // 저장된 포인트 문장에는 이름이 들어 있으므로, 이름을 지우고 다시 계산해 "you"와 "your partner"로 표시한다.
+      const input = reading.input as unknown as GunghapInput;
+      const points = calculateGunghap({ a: { ...input.a, name: "" }, b: { ...input.b, name: "" } }, new Date(), "en").points;
+      return {
+        eyebrow: "Our K-Compatibility",
+        hanja: `${a.hanja} × ${b.hanja}`,
+        headline: `The ${a.sign} × the ${b.sign}`,
+        body: points[0] ? `${points[0].title} — ${points[0].text}` : "Two charts that fill each other in.",
+        pillars: pillarsEn(c.a),
+        pillarsB: pillarsEn(c.b),
+        cta: { label: "Check your compatibility", href: "/en/compatibility" },
+      };
+    }
+    case "tarot": {
+      const c = reading.chart as unknown as TarotChart;
+      return {
+        eyebrow: `${c.topicLabel} tarot`,
+        headline: c.cards.map((card) => card.name).join(" · "),
+        body: c.cards.map((card) => `${card.position}: ${card.meaning}`).join(" / "),
+        cards: c.cards.map((card) => ({ name: card.name, nameEn: card.nameEn, reversed: card.reversed, position: card.position })),
+        cta: { label: "Draw your own cards", href: "/en/tarot" },
+      };
+    }
+    default: {
+      const c = reading.chart as unknown as SajuChart;
+      const d = dayOf(c);
+      return {
+        eyebrow: "My Korean birth sign",
+        hanja: d.hanja,
+        headline: `The ${d.sign} · ${d.roman}`,
+        body: `${d.dm.title}. ${d.dm.text} ${d.trait}`,
+        pillars: pillarsEn(c),
+        cta: { label: "See your Korean birth chart", href: "/en/saju" },
+      };
+    }
+  }
+}
+
+function shareSummaryKo(reading: ReadingRow): Omit<ShareSummary, "lang"> {
   switch (reading.kind) {
     case "saju": {
       const c = reading.chart as unknown as SajuChart;

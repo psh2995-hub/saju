@@ -2,6 +2,7 @@ import "server-only";
 import { ImageResponse } from "next/og";
 import { ogFonts } from "./og-fonts";
 import { ELEMENT_HEX, type SharePillar, type ShareSummary } from "./share";
+import { SITE_NAME_EN } from "./i18n";
 import { SITE_NAME } from "./site";
 
 const GOLD = "#ffc000";
@@ -45,7 +46,9 @@ export async function renderShareImage(s: ShareSummary, opts: { og: boolean; hea
   const width = og ? 1200 : 1080;
   const height = og ? 630 : 1350;
 
-  const allText = [SITE_NAME, s.eyebrow, s.headline, s.hanja ?? "", s.body, ...(s.cards ?? []).flatMap((c) => [c.name, c.position, "역방향정방향"]), ...(s.pillars ?? []).flatMap((p) => [p.label, p.gan, p.zhi]), ...(s.pillarsB ?? []).flatMap((p) => [p.gan, p.zhi]), "×·—()0123456789"].join("");
+  const siteName = s.lang === "en" ? SITE_NAME_EN : SITE_NAME;
+  const [upright, reversed] = s.lang === "en" ? ["upright", "reversed"] : ["정방향", "역방향"];
+  const allText = [siteName, s.eyebrow, s.headline, s.hanja ?? "", s.body, ...(s.cards ?? []).flatMap((c) => [c.name, c.position, upright, reversed]), ...(s.pillars ?? []).flatMap((p) => [p.label, p.gan, p.zhi]), ...(s.pillarsB ?? []).flatMap((p) => [p.gan, p.zhi]), "×·—()0123456789"].join("");
   const fonts = await ogFonts(allText);
 
   const pillarSize = og ? 40 : s.pillarsB ? 46 : 64;
@@ -53,7 +56,7 @@ export async function renderShareImage(s: ShareSummary, opts: { og: boolean; hea
     <div style={{ display: "flex", flexDirection: "column", width, height, background: "#000", color: "#fff", fontFamily: "Sans", padding: og ? 56 : 80 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: og ? 30 : 38, fontWeight: 700 }}>
         <div style={{ display: "flex", width: og ? 30 : 38, height: og ? 30 : 38, border: `4px solid ${GOLD}` }} />
-        {SITE_NAME}
+        {siteName}
       </div>
       <div style={{ display: "flex", flexDirection: og ? "row" : "column", flex: 1, gap: og ? 48 : 56, marginTop: og ? 40 : 72 }}>
         <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
@@ -90,7 +93,7 @@ export async function renderShareImage(s: ShareSummary, opts: { og: boolean; hea
                 >
                   {c.name}
                 </div>
-                <div style={{ fontSize: og ? 18 : 24, color: "#969696" }}>{c.reversed ? "역방향" : "정방향"}</div>
+                <div style={{ fontSize: og ? 18 : 24, color: "#969696" }}>{c.reversed ? reversed : upright}</div>
               </div>
             ))}
           </div>
@@ -98,7 +101,7 @@ export async function renderShareImage(s: ShareSummary, opts: { og: boolean; hea
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: og ? 22 : 28, color: "#7d7d7d", marginTop: 24 }}>
         <div>{s.cta.label}</div>
-        <div style={{ color: GOLD }}>{SITE_NAME}</div>
+        <div style={{ color: GOLD }}>{siteName}</div>
       </div>
     </div>
   );

@@ -69,7 +69,7 @@ export const UI_TEXT = {
     refunded: "This purchase has been refunded.",
     agreeBefore:
       "I understand that this is digital content, so once writing starts after payment, it can no longer be refunded. (",
-    refundPolicy: "Refund policy, in Korean",
+    refundPolicy: "Refund policy",
     agreeAfter: ")",
     checkingPayment: "Confirming payment…",
     payButton: (price: string, followup: boolean) => `Pay ${price} and see the ${followup ? "answer" : "full reading"}`,
