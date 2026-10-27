@@ -15,6 +15,28 @@ export type Database = {
   };
   public: {
     Tables: {
+      admin_login_attempts: {
+        Row: {
+          created_at: string;
+          id: number;
+          ip: string;
+          ok: boolean;
+          reason: string | null;
+          totp_step: number | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: never;
+          ip: string;
+          ok: boolean;
+          reason?: string | null;
+          totp_step?: number | null;
+          user_agent?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["admin_login_attempts"]["Insert"]>;
+        Relationships: [];
+      };
       followups: {
         Row: {
           ai_result: string | null;
