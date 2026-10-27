@@ -1,10 +1,10 @@
 import { usdPaymentsEnabled, type Currency, type Lang } from "./i18n";
 
 export const PRODUCTS = {
-  saju: { name: "사주 정밀 풀이", price: 9900 },
+  saju: { name: "사주 정밀 풀이", price: 5900 },
   tarot: { name: "타로 심층 해석", price: 3900 },
-  gunghap: { name: "궁합 정밀 풀이", price: 12900 },
-  newyear: { name: "신년운세", price: 9900 },
+  gunghap: { name: "궁합 정밀 풀이", price: 5900 },
+  newyear: { name: "신년운세", price: 4900 },
   zodiac: { name: "별자리 풀이", price: 4900 },
 } as const;
 
@@ -28,8 +28,8 @@ export const isKindAvailable = (kind: ReadingKind, lang: Lang) => lang === "ko" 
 /** 결제한 풀이에 이어서 묻는 추가 질문 1회 */
 export const FOLLOWUP = { name: "추가 질문", price: 2900 } as const;
 
-/** 영문 상품의 달러 가격(센트). 원화 가격을 1달러 1,400원으로 바꿔 반올림한 값과 같게 맞췄다. */
-export const PRICES_USD: Record<EnKind, number> = { zodiac: 400, tarot: 300, newyear: 700, saju: 700 };
+/** 영문 상품의 달러 가격(센트). 원화 가격대를 그대로 옮겼다: 3,900원 $3 · 4,900원 $4 · 5,900원 $5. */
+export const PRICES_USD: Record<EnKind, number> = { zodiac: 400, tarot: 300, newyear: 400, saju: 500 };
 export const FOLLOWUP_PRICE_USD = 200;
 
 /** 새 풀이의 결제 통화와 금액. 영문 풀이는 달러 채널이 설정돼 있을 때만 달러로 받는다. */
