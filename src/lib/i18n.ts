@@ -3,12 +3,18 @@ export type Lang = "ko" | "en";
 
 export const isLang = (v: unknown): v is Lang => v === "ko" || v === "en";
 
-/** 결제 통화. 금액은 KRW는 원, USD는 센트 단위로 저장한다(포트원 totalAmount 규칙과 같다). */
+/** 결제 통화. 금액은 KRW는 원, USD는 센트 단위로 저장한다(토스페이먼츠에는 달러로 바꿔 보낸다). */
 export type Currency = "KRW" | "USD";
 
-/** 토스페이먼츠 달러 채널(해외카드)이 설정되면 영문 페이지 결제를 달러로 받는다. */
-export const USD_CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY_USD;
-export const usdPaymentsEnabled = () => !!USD_CHANNEL_KEY;
+/**
+ * 토스페이먼츠 결제창형 연동 클라이언트 키. 하나의 MID(상점)는 한 통화만 받으므로 달러 결제용 키는 따로 받는다.
+ * 달러 키가 설정되면 영문 페이지 결제를 달러로 받는다.
+ */
+export const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+export const TOSS_CLIENT_KEY_USD = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY_USD;
+/** 달러 MID의 결제 어드민에서 외화결제를 설정한 결제 UI(variantKey). 비우면 기본 UI를 쓴다. */
+export const TOSS_VARIANT_KEY_USD = process.env.NEXT_PUBLIC_TOSS_VARIANT_KEY_USD;
+export const usdPaymentsEnabled = () => !!TOSS_CLIENT_KEY_USD;
 
 /** 언어 선택을 기억하는 쿠키. proxy.ts가 첫 화면(/)에서 읽는다. */
 export const LANG_COOKIE = "lang";
@@ -36,6 +42,7 @@ export const UI_TEXT = {
     fallbackError: "잠시 후 다시 시도해 주세요.",
     paymentCancelled: "결제가 취소되었습니다.",
     paymentIncomplete: "결제가 완료되지 않았습니다.",
+    paymentPending: "입금이 확인되면 풀이가 열립니다. 입금 후 이 페이지를 다시 열어 주세요.",
     mockFailed: "테스트 결제에 실패했습니다.",
     paymentNotReady: "결제 준비 중입니다. 잠시 후 다시 이용해 주세요.",
     loadFailed: "풀이를 불러오지 못했습니다.",
@@ -62,6 +69,7 @@ export const UI_TEXT = {
     fallbackError: "Something went wrong. Please try again in a moment.",
     paymentCancelled: "The payment was cancelled.",
     paymentIncomplete: "The payment was not completed.",
+    paymentPending: "Your reading will open once the payment is confirmed. Please reopen this page later.",
     mockFailed: "Test payment failed.",
     paymentNotReady: "Payments are not available yet. Please try again later.",
     loadFailed: "We couldn't load your reading.",

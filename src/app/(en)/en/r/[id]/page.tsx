@@ -10,6 +10,7 @@ import { TarotView } from "@/components/TarotView";
 import { ZodiacView } from "@/components/ZodiacView";
 import type { GunghapChart, GunghapInput } from "@/lib/gunghap";
 import type { NewYearChart } from "@/lib/newyear";
+import { readPaymentRedirect } from "@/lib/order";
 import { mockPaymentAllowed } from "@/lib/payments";
 import { PRODUCT_NAMES_EN } from "@/lib/products";
 import type { SajuChart, SajuInput } from "@/lib/saju";
@@ -62,7 +63,6 @@ function ChartView({ reading }: { reading: ReadingRow }) {
 async function Reading({ params, searchParams }: PageProps<"/en/r/[id]">) {
   const { id } = await params;
   const query = await searchParams;
-  const one = (v: string | string[] | undefined) => (typeof v === "string" ? v : null);
   const reading = await getReading(id);
   if (!reading) notFound();
   // 한국어로 만든 풀이는 한국어 결과 페이지에서 연다(결제 후 돌아온 쿼리도 그대로 넘긴다).
@@ -70,7 +70,6 @@ async function Reading({ params, searchParams }: PageProps<"/en/r/[id]">) {
     const qs = new URLSearchParams(Object.entries(query).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : []))).toString();
     redirect(`/r/${id}${qs ? `?${qs}` : ""}`);
   }
-  const paymentId = one(query.paymentId);
   const followups = reading.status === "paid" ? await getFollowups(reading.id) : [];
 
   return (
@@ -86,7 +85,7 @@ async function Reading({ params, searchParams }: PageProps<"/en/r/[id]">) {
         result={reading.ai_status === "done" ? reading.ai_result : null}
         followups={followups}
         mockPayment={mockPaymentAllowed()}
-        paymentRedirect={paymentId ? { paymentId, code: one(query.code), message: one(query.message), followupId: one(query.for) } : null}
+        paymentRedirect={readPaymentRedirect(query)}
         description={DESCRIPTION[reading.kind]}
         lang="en"
       />

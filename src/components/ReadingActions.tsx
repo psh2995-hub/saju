@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import type { Currency, Lang } from "@/lib/i18n";
+import type { PaymentRedirect } from "@/lib/order";
 import type { FollowupRow } from "@/lib/supabase";
 import { Followups } from "./Followups";
 import { Unlock, type UnlockTarget } from "./Unlock";
-
-type Redirect = { paymentId: string; code: string | null; message: string | null; followupId: string | null } | null;
 
 /** 결과 페이지의 결제·풀이 영역과, 풀이가 끝난 뒤 열리는 추가 질문 영역 */
 export function ReadingActions(props: {
@@ -18,7 +17,7 @@ export function ReadingActions(props: {
   result: string | null;
   followups: FollowupRow[];
   mockPayment: boolean;
-  paymentRedirect: Redirect;
+  paymentRedirect: PaymentRedirect | null;
   description: React.ReactNode;
   lang?: Lang;
 }) {
@@ -46,7 +45,7 @@ export function ReadingActions(props: {
           currency={props.currency}
           initial={props.followups}
           mockPayment={props.mockPayment}
-          paymentRedirect={redirect?.followupId ? { ...redirect, followupId: redirect.followupId } : null}
+          paymentRedirect={redirect?.followupId ? redirect : null}
           lang={props.lang}
         />
       )}

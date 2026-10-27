@@ -1,11 +1,12 @@
 "use client";
 
-import * as PortOne from "@portone/browser-sdk/v2";
+import { ANONYMOUS, loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Eyebrow, PrimaryButton } from "./ui";
-import { formatPrice, readingPath, UI_TEXT, USD_CHANNEL_KEY, type Currency, type Lang } from "@/lib/i18n";
+import { formatPrice, readingPath, TOSS_CLIENT_KEY, TOSS_CLIENT_KEY_USD, TOSS_VARIANT_KEY_USD, UI_TEXT, type Currency, type Lang } from "@/lib/i18n";
+import { createOrderId, tossAmount, type PaymentRedirect } from "@/lib/order";
 
 export type UnlockTarget = { type: "reading" | "followup"; id: string; readingId: string };
 
@@ -18,8 +19,8 @@ type Props = {
   initialStatus: "unpaid" | "paid" | "refunded";
   initialResult: string | null;
   mockPayment: boolean;
-  /** 모바일 결제 후 redirectUrl로 돌아왔을 때 쿼리에 담긴 결제 결과 */
-  paymentRedirect: { paymentId: string; code: string | null; message: string | null } | null;
+  /** 토스페이먼츠 결제창에서 successUrl·failUrl로 돌아왔을 때 쿼리에 담긴 결제 결과 */
+  paymentRedirect: PaymentRedirect | null;
   /** 결제 영역 설명 문구 */
   description?: React.ReactNode;
   /** 추가 질문처럼 작게 보여 줄 때 */
@@ -31,13 +32,9 @@ type Props = {
 
 type Phase = "unpaid" | "paying" | "generating" | "done" | "failed" | "refunded";
 
-const STORE_ID = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
-const CHANNEL_KEY = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY;
-
 export function Unlock({ target, productName, price, currency = "KRW", initialStatus, initialResult, mockPayment, paymentRedirect, description, compact, onDone, lang = "ko" }: Props) {
   const t = UI_TEXT[lang];
   const generateUrl = target.type === "reading" ? `/api/readings/${target.id}/generate` : `/api/followups/${target.id}/generate`;
-  const customData = target.type === "reading" ? { readingId: target.id } : { followupId: target.id };
   const [phase, setPhase] = useState<Phase>(
     initialStatus === "refunded"
       ? "refunded"
@@ -51,7 +48,7 @@ export function Unlock({ target, productName, price, currency = "KRW", initialSt
   );
   const [text, setText] = useState(initialResult ?? "");
   const [error, setError] = useState<string | null>(
-    paymentRedirect?.code ? (paymentRedirect.message ?? t.paymentCancelled) : null,
+    paymentRedirect?.code ? (lang === "ko" && paymentRedirect.message ? paymentRedirect.message : t.paymentCancelled) : null,
   );
   const [agreed, setAgreed] = useState(false);
   const started = useRef(false);
@@ -97,15 +94,15 @@ export function Unlock({ target, productName, price, currency = "KRW", initialSt
   }, [startGeneration]);
 
   const confirmPayment = useCallback(
-    async (paymentId: string) => {
+    async (redirect: PaymentRedirect) => {
       const res = await fetch("/api/payments/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentId }),
+        body: JSON.stringify({ paymentKey: redirect.paymentKey, orderId: redirect.orderId, amount: redirect.amount }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.status !== "paid") {
-        setError(lang === "en" ? t.paymentIncomplete : (data.error ?? t.paymentIncomplete));
+        setError(data.status === "pending" ? t.paymentPending : lang === "en" ? t.paymentIncomplete : (data.error ?? t.paymentIncomplete));
         setPhase("unpaid");
         return;
       }
@@ -121,7 +118,7 @@ export function Unlock({ target, productName, price, currency = "KRW", initialSt
     started.current = true;
     if (paymentRedirect) {
       window.history.replaceState(null, "", window.location.pathname);
-      if (initialStatus === "unpaid" && !paymentRedirect.code) void confirmPayment(paymentRedirect.paymentId);
+      if (initialStatus === "unpaid" && !paymentRedirect.code) void confirmPayment(paymentRedirect);
       return;
     }
     // 결제는 됐지만 풀이가 아직 없으면 마운트 시 생성 요청을 연다.
@@ -131,12 +128,13 @@ export function Unlock({ target, productName, price, currency = "KRW", initialSt
 
   async function pay() {
     setError(null);
-    if (mockPayment && !STORE_ID) {
+    const clientKey = currency === "USD" ? TOSS_CLIENT_KEY_USD : TOSS_CLIENT_KEY;
+    if (mockPayment && !clientKey) {
       setPhase("paying");
       const res = await fetch("/api/payments/mock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(customData),
+        body: JSON.stringify(target.type === "reading" ? { readingId: target.id } : { followupId: target.id }),
       });
       if (!res.ok) {
         setError(t.mockFailed);
@@ -146,35 +144,38 @@ export function Unlock({ target, productName, price, currency = "KRW", initialSt
       beginGeneration();
       return;
     }
-    const channelKey = currency === "USD" ? USD_CHANNEL_KEY : CHANNEL_KEY;
-    if (!STORE_ID || !channelKey) {
+    if (!clientKey) {
       setError(t.paymentNotReady);
       return;
     }
 
     setPhase("paying");
-    const paymentId = `${target.type === "reading" ? "r" : "f"}-${target.id.replaceAll("-", "")}-${Date.now().toString(36)}`;
-    const response = await PortOne.requestPayment({
-      storeId: STORE_ID,
-      channelKey,
-      paymentId,
-      orderName: productName,
-      totalAmount: price,
-      currency: currency === "USD" ? "CURRENCY_USD" : "CURRENCY_KRW",
-      // 토스페이먼츠 달러 결제는 해외 발급 카드로만 받는다.
-      ...(currency === "USD" ? { bypass: { tosspayments: { useInternationalCardOnly: true } } } : {}),
-      payMethod: "CARD",
-      productType: "PRODUCT_TYPE_DIGITAL",
-      customData,
-      locale: lang === "en" ? "EN_US" : "KO_KR",
-      redirectUrl: `${window.location.origin}${readingPath(target.readingId, lang)}${target.type === "followup" ? `?for=${target.id}` : ""}`,
-    });
-    if (!response || response.code) {
-      setError(response?.message ?? t.paymentCancelled);
+    const failed = (e: unknown) => {
+      // 결제창을 닫거나 결제가 실패하면 다시 결제할 수 있게 되돌린다.
+      setError(e instanceof Error && lang === "ko" ? e.message : t.paymentCancelled);
       setPhase("unpaid");
-      return;
+    };
+    try {
+      // 결제창형 결제: 토스페이먼츠 결제창에서 결제수단을 고르고 인증하면 successUrl(이 페이지)로 돌아온다.
+      // 주문번호에 결제 대상이 들어 있어 돌아온 뒤 승인할 때 그대로 쓴다.
+      const widgets = (await loadTossPayments(clientKey)).widgets({ customerKey: ANONYMOUS });
+      await widgets.setAmount({ currency, value: tossAmount(price, currency) });
+      const paymentWindow = await widgets.renderPaymentWindow({
+        orderName: productName,
+        ...(currency === "USD" && TOSS_VARIANT_KEY_USD ? { variantKey: { paymentMethod: TOSS_VARIANT_KEY_USD } } : {}),
+      });
+      const returnUrl = `${window.location.origin}${readingPath(target.readingId, lang)}`;
+      paymentWindow.on("cancel", async () => setPhase("unpaid"));
+      paymentWindow.on("paymentRequest", async () => {
+        try {
+          await widgets.requestPayment({ orderId: createOrderId(target), orderName: productName, successUrl: returnUrl, failUrl: returnUrl });
+        } catch (e) {
+          failed(e);
+        }
+      });
+    } catch (e) {
+      failed(e);
     }
-    await confirmPayment(paymentId);
   }
 
   if (phase === "refunded") {
@@ -204,7 +205,7 @@ export function Unlock({ target, productName, price, currency = "KRW", initialSt
         <PrimaryButton className={compact ? "mt-4 h-12" : "mt-5"} onClick={pay} disabled={!agreed || phase === "paying"}>
           {phase === "paying" ? t.checkingPayment : t.payButton(formatPrice(price, lang, currency), target.type === "followup")}
         </PrimaryButton>
-        {mockPayment && !STORE_ID && <p className="mt-3 text-center text-xs text-error">{t.mockNotice}</p>}
+        {mockPayment && !TOSS_CLIENT_KEY && <p className="mt-3 text-center text-xs text-error">{t.mockNotice}</p>}
       </section>
     );
   }

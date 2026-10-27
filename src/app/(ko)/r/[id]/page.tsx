@@ -10,6 +10,7 @@ import { TarotView } from "@/components/TarotView";
 import { ZodiacView } from "@/components/ZodiacView";
 import type { GunghapChart, GunghapInput } from "@/lib/gunghap";
 import type { NewYearChart } from "@/lib/newyear";
+import { readPaymentRedirect } from "@/lib/order";
 import { mockPaymentAllowed } from "@/lib/payments";
 import { PRODUCTS } from "@/lib/products";
 import type { SajuChart, SajuInput } from "@/lib/saju";
@@ -59,8 +60,6 @@ function ChartView({ reading }: { reading: ReadingRow }) {
 async function Reading({ params, searchParams }: PageProps<"/r/[id]">) {
   const { id } = await params;
   const query = await searchParams;
-  const one = (v: string | string[] | undefined) => (typeof v === "string" ? v : null);
-  const paymentId = one(query.paymentId);
   const reading = await getReading(id);
   if (!reading) notFound();
   // 해외(영문) 페이지에서 만든 풀이는 영문 결과 페이지에서 연다.
@@ -83,7 +82,7 @@ async function Reading({ params, searchParams }: PageProps<"/r/[id]">) {
         result={reading.ai_status === "done" ? reading.ai_result : null}
         followups={followups}
         mockPayment={mockPaymentAllowed()}
-        paymentRedirect={paymentId ? { paymentId, code: one(query.code), message: one(query.message), followupId: one(query.for) } : null}
+        paymentRedirect={readPaymentRedirect(query)}
         description={DESCRIPTION[reading.kind]}
       />
     </div>
