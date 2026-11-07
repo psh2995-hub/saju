@@ -53,6 +53,10 @@ Vercel 환경 변수 `SITE_PASSWORD`에 값을 넣고 다시 배포하면 사이
 - 토스페이먼츠 웹훅(`/api/payments/webhook`)은 토스 서버가 부르므로 열어 둡니다.
 - PG 심사 담당자가 사이트를 봐야 할 때는 잠금을 풀거나 비밀번호를 전달하세요.
 
+## Supabase 일시정지 방지
+
+Supabase 무료 플랜은 7일 동안 요청이 없으면 프로젝트를 멈춥니다. `vercel.json`의 Cron이 매일 03:17(UTC) `/api/cron/keepalive`를 불러 `readings`를 한 번 조회합니다. Vercel 환경 변수 `CRON_SECRET`이 있어야 하고, Vercel은 이 값을 `Authorization: Bearer`로 붙여 부릅니다. 이 주소는 오픈 전 잠금에서 빠져 있습니다.
+
 ## 관리자 화면 `/admin`
 
 결제 매출(오늘·7일·30일·전체, 상품별, 최근 14일), 풀이별 입력값·결제 기록·AI 풀이·추가 질문 답변을 봅니다.
