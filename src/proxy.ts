@@ -42,13 +42,13 @@ function safeEqual(a: string, b: string) {
   return diff === 0;
 }
 
-/**
- * 오픈 전 잠금. SITE_PASSWORD가 있으면 사이트 전체에 브라우저 기본 인증(아이디는 아무거나)을 건다.
- * 토스페이먼츠 서버가 부르는 웹훅만 열어 둔다(웹훅은 결제 조회 API로 다시 확인하므로 안전하다).
- */
+/** 서버끼리 부르는 주소. 각자 따로 확인하므로(웹훅은 결제 조회 API, Cron은 CRON_SECRET) 잠금에서 뺀다. */
+const UNLOCKED_PATHS = new Set(["/api/payments/webhook", "/api/cron/keepalive"]);
+
+/** 오픈 전 잠금. SITE_PASSWORD가 있으면 사이트 전체에 브라우저 기본 인증(아이디는 아무거나)을 건다. */
 function siteLock(request: NextRequest, pathname: string) {
   const password = process.env.SITE_PASSWORD;
-  if (!password || pathname === "/api/payments/webhook") return null;
+  if (!password || UNLOCKED_PATHS.has(pathname)) return null;
   const auth = request.headers.get("authorization");
   if (auth?.startsWith("Basic ")) {
     try {
